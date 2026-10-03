@@ -1,0 +1,15 @@
+Django>=5.0
+Pillow
+pandas
+openpyxl
+PyMuPDF
+pikepdf
+opencv-python
+qrcode
+reportlab
+django-filter
+django-crispy-forms
+crispy-bootstrap5
+python-dotenv
+gunicorn
+whitenoise

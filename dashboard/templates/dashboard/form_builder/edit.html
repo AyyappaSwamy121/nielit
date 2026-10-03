@@ -1,0 +1,310 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} | Form Builder{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <h1 class="h2"><span class="material-icons-round align-middle me-2 text-secondary" style="font-size: 1.8rem;">edit</span>{{ title }}</h1>
+        <p class="text-muted mb-0">{% if field.pk %}Configure <strong>{{ field.field_name }}</strong>{% else %}Create a new registration form field{% endif %}. Changes apply immediately.</p>
+    </div>
+    <a href="{% url 'form_builder' %}" class="btn btn-outline-secondary"><span class="material-icons-round align-middle me-1" style="font-size:1.1rem;">arrow_back</span> Back to Form Builder</a>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %} alert-dismissible fade show" role="alert">
+    <span class="material-icons-round align-middle me-2" style="font-size: 1.1rem;">check_circle</span>{{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if not can_change %}
+<div class="alert alert-warning"><span class="material-icons-round align-middle me-2">lock</span>You have read-only access. Only users with the <strong>change form configuration</strong> permission can modify fields.</div>
+{% endif %}
+
+<form method="post" id="fieldForm">
+    {% csrf_token %}
+
+    <div class="row g-4">
+        <!-- Main configuration -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons-round text-secondary">tune</span>
+                    <span class="fw-bold">Field Configuration</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Field Label <span class="text-danger">*</span></label>
+                            <input type="text" name="label" class="form-control" value="{{ field.label }}" placeholder="Name (as per Aadhaar)" required {% if not can_change %}disabled{% endif %}>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Field Name <span class="text-danger">*</span></label>
+                            <input type="text" name="field_name" class="form-control" value="{{ field.field_name }}" placeholder="full_name" required {% if field.pk %}readonly{% endif %} {% if not can_change %}disabled{% endif %}>
+                            <div class="form-text">Unique identifier used by the backend (cannot be changed after creation).</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Field Type</label>
+                            <select name="field_type" class="form-select" {% if not can_change %}disabled{% endif %}>
+                                {% for value, label in field_type_choices %}
+                                <option value="{{ value }}" {% if field.field_type == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Section</label>
+                            <select name="section" class="form-select" {% if not can_change %}disabled{% endif %}>
+                                {% for s in sections %}
+                                <option value="{{ s.id }}" {% if field.section_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Display Order</label>
+                            <input type="number" name="display_order" class="form-control" value="{{ field.display_order|default:0 }}" {% if not can_change %}disabled{% endif %}>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Placeholder</label>
+                            <input type="text" name="placeholder" class="form-control" value="{{ field.placeholder }}" placeholder="Enter name as per Aadhaar" {% if not can_change %}disabled{% endif %}>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Help Text / Description</label>
+                            <textarea name="help_text" class="form-control" rows="2" {% if not can_change %}disabled{% endif %}>{{ field.help_text }}</textarea>
+                            <div class="form-text">Appears below the field on the registration form.</div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Default Value</label>
+                            <input type="text" name="default_value" class="form-control" value="{{ field.default_value }}" {% if not can_change %}disabled{% endif %}>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="required" id="req" {% if field.required %}checked{% endif %} {% if not can_change %}disabled{% endif %}>
+                                <label class="form-check-label fw-bold" for="req">Required</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="visible" id="vis" {% if field.visible %}checked{% endif %} {% if not can_change %}disabled{% endif %}>
+                                <label class="form-check-label fw-bold" for="vis">Visible</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="readonly" id="ro" {% if field.readonly %}checked{% endif %} {% if not can_change %}disabled{% endif %}>
+                                <label class="form-check-label fw-bold" for="ro">Read Only</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="is_active" id="act" {% if field.is_active %}checked{% endif %} {% if not can_change %}disabled{% endif %}>
+                                <label class="form-check-label fw-bold" for="act">Active</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Validation -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons-round text-secondary">rule</span>
+                    <span class="fw-bold">Validation</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Validation Type</label>
+                            <select name="validator_type" class="form-select" {% if not can_change %}disabled{% endif %}>
+                                <option value="">None</option>
+                                {% for value, label in validator_choices %}
+                                <option value="{{ value }}" {% if field.validator_type == value %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Minimum Length</label>
+                            <input type="number" name="min_length" class="form-control" value="{{ field.min_length|default:'' }}" {% if not can_change %}disabled{% endif %}>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Maximum Length</label>
+                            <input type="number" name="max_length" class="form-control" value="{{ field.max_length|default:'' }}" {% if not can_change %}disabled{% endif %}>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Minimum Value</label>
+                            <input type="number" step="any" name="min_value" class="form-control" value="{{ field.min_value|default:'' }}" {% if not can_change %}disabled{% endif %}>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Maximum Value</label>
+                            <input type="number" step="any" name="max_value" class="form-control" value="{{ field.max_value|default:'' }}" {% if not can_change %}disabled{% endif %}>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Regex Pattern</label>
+                            <input type="text" name="regex_pattern" class="form-control" value="{{ field.regex_pattern }}" placeholder="^[0-9]{12}$" {% if not can_change %}disabled{% endif %}>
+                        </div>
+                    </div>
+                    <hr>
+                    <h6 class="fw-bold mb-3">Validation Error Messages</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Required</label>
+                            <input type="text" name="msg_required" class="form-control" value="{{ validation_messages.required|default:'' }}" placeholder="This field is required." {% if not can_change %}disabled{% endif %}>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Min Length</label>
+                            <input type="text" name="msg_min_length" class="form-control" value="{{ validation_messages.min_length|default:'' }}" placeholder="Please enter at least 5 characters." {% if not can_change %}disabled{% endif %}>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Max Length</label>
+                            <input type="text" name="msg_max_length" class="form-control" value="{{ validation_messages.max_length|default:'' }}" placeholder="Maximum 100 characters allowed." {% if not can_change %}disabled{% endif %}>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Pattern</label>
+                            <input type="text" name="msg_pattern" class="form-control" value="{{ validation_messages.pattern|default:'' }}" placeholder="Please enter a valid value." {% if not can_change %}disabled{% endif %}>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Email</label>
+                            <input type="text" name="msg_email" class="form-control" value="{{ validation_messages.email|default:'' }}" placeholder="Enter a valid email address." {% if not can_change %}disabled{% endif %}>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Invalid File</label>
+                            <input type="text" name="msg_invalid_file" class="form-control" value="{{ validation_messages.invalid_file|default:'' }}" placeholder="The file is not valid." {% if not can_change %}disabled{% endif %}>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File configuration -->
+            <div class="card shadow-sm mb-4" id="fileConfigCard">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons-round text-secondary">upload_file</span>
+                    <span class="fw-bold">File Upload Configuration</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Allowed File Types</label>
+                            <input type="text" name="allowed_file_types" class="form-control" value="{{ field.allowed_file_types|join:',' }}" placeholder="jpg, jpeg, png, pdf" {% if not can_change %}disabled{% endif %}>
+                            <div class="form-text">Comma-separated extensions.</div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Max Size (KB)</label>
+                            <input type="number" name="max_file_size" class="form-control" value="{{ field.max_file_size|default:'' }}" placeholder="2048" {% if not can_change %}disabled{% endif %}>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Min Size (KB)</label>
+                            <input type="number" name="min_file_size" class="form-control" value="{{ field.min_file_size|default:'' }}" {% if not can_change %}disabled{% endif %}>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Image Min Width (px)</label>
+                            <input type="number" name="image_min_width" class="form-control" value="{{ field.image_min_width|default:'' }}" {% if not can_change %}disabled{% endif %}>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Image Min Height (px)</label>
+                            <input type="number" name="image_min_height" class="form-control" value="{{ field.image_min_height|default:'' }}" {% if not can_change %}disabled{% endif %}>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Max File Size Message</label>
+                            <input type="text" name="msg_max_file_size" class="form-control" value="{{ validation_messages.max_file_size|default:'' }}" placeholder="File exceeds maximum size." {% if not can_change %}disabled{% endif %}>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conditions -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons-round text-secondary">alt_route</span>
+                    <span class="fw-bold">Conditional Display</span>
+                    <span class="badge bg-light text-muted ms-2">optional</span>
+                </div>
+                <div class="card-body">
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" name="is_conditional" id="cond_flag" {% if field.is_conditional %}checked{% endif %} {% if not can_change %}disabled{% endif %}>
+                        <label class="form-check-label" for="cond_flag">This field depends on another field's value</label>
+                    </div>
+                    <div id="conditionsWrap">
+                        {% for cond in field.conditions %}
+                        <div class="row g-2 mb-2 cond-row">
+                            <div class="col-md-4"><input type="text" name="cond_field" class="form-control" value="{{ cond.field }}" placeholder="field_name" {% if not can_change %}disabled{% endif %}></div>
+                            <div class="col-md-3">
+                                <select name="cond_operator" class="form-select" {% if not can_change %}disabled{% endif %}>
+                                    <option value="equals" {% if cond.operator == 'equals' %}selected{% endif %}>equals</option>
+                                    <option value="not_equals" {% if cond.operator == 'not_equals' %}selected{% endif %}>not equals</option>
+                                    <option value="contains" {% if cond.operator == 'contains' %}selected{% endif %}>contains</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3"><input type="text" name="cond_value" class="form-control" value="{{ cond.value }}" placeholder="value" {% if not can_change %}disabled{% endif %}></div>
+                            <div class="col-md-2"><button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="this.closest('.cond-row').remove()">Remove</button></div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if can_change %}<button type="button" class="btn btn-sm btn-outline-secondary mt-2" onclick="addCondition()"><span class="material-icons-round align-middle me-1" style="font-size:1rem;">add</span> Add Condition</button>{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Options sidebar -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons-round text-secondary">list</span>
+                    <span class="fw-bold">Dropdown / Radio Options</span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Options Source</label>
+                        <select name="options_source" class="form-select" {% if not can_change %}disabled{% endif %}>
+                            {% for value, label in options_source_choices %}
+                            <option value="{{ value }}" {% if field.options_source == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Master Data Table</label>
+                        <input type="text" name="source_model" class="form-control" value="{{ field.source_model }}" placeholder="Religion, State, District..." {% if not can_change %}disabled{% endif %}>
+                        <div class="form-text">Used when source is "Master Data Table".</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons-round text-secondary">save</span>
+                    <span class="fw-bold">Save</span>
+                </div>
+                <div class="card-body">
+                    {% if can_change %}
+                    <button type="submit" class="btn btn-primary w-100 mb-2"><span class="material-icons-round align-middle me-1" style="font-size:1.1rem;">save</span> Save &amp; Apply</button>
+                    {% endif %}
+                    <a href="{% url 'form_builder' %}" class="btn btn-outline-secondary w-100">Cancel</a>
+                    <div class="form-text mt-2">Changes are applied immediately to the student registration form. A version snapshot and audit record are created automatically.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function addCondition() {
+        const wrap = document.getElementById('conditionsWrap');
+        const row = document.createElement('div');
+        row.className = 'row g-2 mb-2 cond-row';
+        row.innerHTML = `
+            <div class="col-md-4"><input type="text" name="cond_field" class="form-control" placeholder="field_name"></div>
+            <div class="col-md-3"><select name="cond_operator" class="form-select"><option value="equals">equals</option><option value="not_equals">not equals</option><option value="contains">contains</option></select></div>
+            <div class="col-md-3"><input type="text" name="cond_value" class="form-control" placeholder="value"></div>
+            <div class="col-md-2"><button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="this.closest('.cond-row').remove()">Remove</button></div>`;
+        wrap.appendChild(row);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "public_base.html" %}
+{% block title %}Server Error | {{ platform_settings.organization_name|default:'Council for Skills and Competencies' }}{% endblock %}
+{% block robots %}noindex,nofollow,noarchive,nosnippet,noimageindex{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+    <h1 class="display-1 text-danger mb-4"><span class="material-icons-round" style="font-size: 100px;">warning</span></h1>
+    <h2 class="mb-4">Internal Server Error</h2>
+    <p class="lead mb-5">We are experiencing technical difficulties. Our team has been notified. Please try again later.</p>
+    <a href="{% url 'registration' %}" class="btn btn-primary btn-lg">Return to Registration Portal</a>
+</div>
+{% endblock %}

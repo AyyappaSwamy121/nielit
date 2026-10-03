@@ -1,0 +1,31 @@
+{% extends "admin/base_site.html" %}
+{% block title %}Assign training partner / ATC | CSC Admin{% endblock %}
+
+{% block content %}
+<h1>Assign training partner to {{ applications.count }} selected application(s)</h1>
+{% if error %}<p style="color:#ba2121; font-weight:bold;">{{ error }}</p>{% endif %}
+
+<form method="post" action="">
+    {% csrf_token %}
+    {% for name, value in hidden_fields %}
+        <input type="hidden" name="{{ name }}" value="{{ value }}">
+    {% endfor %}
+
+    <p>
+        <label for="training_partner"><strong>Training partner / ATC:</strong></label><br>
+        <select id="training_partner" name="training_partner" style="min-width:300px;">
+            <option value="">-- select --</option>
+            {% for tp in training_partners %}<option value="{{ tp.pk }}">{{ tp.name }}</option>{% endfor %}
+        </select>
+    </p>
+    <p>
+        <label for="batch_code"><strong>Batch code (optional):</strong></label><br>
+        <input type="text" id="batch_code" name="batch_code" style="min-width:300px;">
+    </p>
+
+    <div>
+        <input type="submit" value="Assign" class="default" style="margin-right:8px;">
+        <a href="{% url 'admin:registrations_studentapplication_changelist' %}" class="button">Cancel</a>
+    </div>
+</form>
+{% endblock %}

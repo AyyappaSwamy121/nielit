@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}</title>
+    <style>
+        @page { size: A4 landscape; margin: 14mm; }
+        body { font-family: Helvetica, Arial, sans-serif; font-size: 9px; color: #212529; }
+        h1 { font-size: 16px; margin: 0 0 2px 0; color: #0d6efd; }
+        p.meta { font-size: 9px; color: #6c757d; margin: 0 0 12px 0; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #0d6efd; color: #fff; padding: 5px 6px; text-align: left; font-size: 9px; }
+        td { padding: 4px 6px; border-bottom: 1px solid #dee2e6; }
+        tr:nth-child(even) td { background: #f8f9fa; }
+        td.num, th.num { text-align: right; }
+    </style>
+</head>
+<body>
+    <h1>{{ title }}</h1>
+    <p class="meta">Generated on {{ generated_at|date:"M d, Y H:i" }}</p>
+    <table>
+        <thead>
+            <tr>
+                {% for h in headers %}
+                <th>{{ h }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+            <tr>
+                {% for cell in row %}
+                <td>{{ cell }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

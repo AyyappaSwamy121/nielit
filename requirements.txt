@@ -1,0 +1,47 @@
+# Core framework
+Django>=5.0
+
+# REST/API
+djangorestframework
+
+# Database adapters
+psycopg2-binary  # PostgreSQL adapter (use if deploying with Postgres)
+
+# Caching/Broker
+redis
+celery
+
+# HTTP client
+requests
+
+# File / image / PDF handling
+Pillow
+PyMuPDF
+pikepdf
+reportlab
+opencv-python
+qrcode
+
+# Data processing / Excel
+pandas
+openpyxl
+
+# Django utilities & UI
+django-filter
+django-crispy-forms
+crispy-bootstrap5
+django-debug-toolbar
+django-extensions
+
+# Deployment / static files
+gunicorn
+whitenoise
+
+# Environment config
+python-dotenv
+
+# Optional but commonly used helpers (keep if you rely on them)
+# - add or remove based on your environment: pyjwt, boto3, ldap3, Pillow extras, etc.
+
+# Note: Some packages have binary wheels and system dependencies (e.g., opencv-python,
+# pikepdf). Install build tools as required on your platform.

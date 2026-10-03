@@ -1,0 +1,34 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label='masterdata' %}">Masterdata</a>
+&rsaquo; Import Master Data
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div>
+      <fieldset class="module aligned">
+        <h2>Upload Excel File for Countries, States, and Districts</h2>
+        <div class="form-row">
+          <div>
+            <label for="excel_file" class="required">Excel File:</label>
+            <input type="file" name="excel_file" id="excel_file" accept=".xlsx, .xls" required>
+            <p class="help">The Excel file must have columns: Country, State, District.</p>
+          </div>
+        </div>
+      </fieldset>
+      
+      <div class="submit-row">
+        <input type="submit" value="Upload and Import" class="default" name="_save">
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

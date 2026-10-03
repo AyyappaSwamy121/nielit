@@ -1,0 +1,1365 @@
+{% extends 'base.html' %}
+
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script>
+    if (window.pdfjsLib) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+</script>
+<script src="/static/document-compressor.js"></script>
+<style>
+    .upload-card { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 24px; margin-bottom: 24px; transition: transform 0.2s; height: 100%; border: 1px solid #eee;}
+    .upload-card:hover { transform: translateY(-2px); }
+    .drop-zone { border: 2px dashed #0b5ed7; border-radius: 8px; padding: 30px; text-align: center; cursor: pointer; background: #f1f6fd; transition: background 0.3s; }
+    .drop-zone:hover, .drop-zone.dragover { background: #e2edfb; }
+    .drop-zone.disabled { border-color: #ccc; background: #f8f9fa; cursor: not-allowed; opacity: 0.6; pointer-events: none; }
+    .preview-container { display: none; margin-top: 15px; }
+    .preview-img { max-width: 100%; border: 1px solid #ddd; border-radius: 4px; }
+    .settings-panel { display: none; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px; border: 1px solid #e9ecef; }
+    .active-settings { background: #e8f5e9; border: 1px solid #c8e6c9; padding: 12px; border-radius: 8px; font-size: 0.85rem; color: #2e7d32; margin-top: 15px; }
+    .props-table { font-size: 0.85rem; }
+    .download-center { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 24px; margin-top: 10px; margin-bottom: 40px; border: 1px solid #eee;}
+    .status-ready { color: #2e7d32; font-weight: 600; }
+    .status-waiting { color: #6c757d; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+
+    
+    <!-- Government Image Processing Module -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="upload-card shadow-lg border-success border-2" style="height: auto;">
+                <h4 class="fw-bold mb-3 text-success"><span class="material-icons-round align-text-bottom me-2">account_balance</span>Government Image Processing</h4>
+                <p class="text-muted">Process a folder of images. All images will be formatted automatically according to the selected type.</p>
+                
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Image Type <span class="text-danger">*</span></label>
+                        <select class="form-select form-select-lg border-2 shadow-sm" id="gov-upload-type">
+                            <option value="photo" selected>Photo</option>
+                            <option value="signature">Signature</option>
+                            <option value="thumb">Thumb Impression</option>
+                        </select>
+                        <div class="form-text" id="gov-upload-type-help">Photo: All images in the selected folder will be processed according to the configured Photo requirements.</div>
+                    </div>
+                    <div class="col-md-8">
+                        <label class="form-label fw-bold">Selected Folder <span class="text-danger">*</span></label>
+                        <div class="drop-zone border-success bg-light py-4" id="gov-drop-zone">
+                            <span class="material-icons-round text-success fs-2 mb-2">folder_open</span>
+                            <p class="mb-1 fw-bold">Drag & Drop Folder Here</p>
+                            <p class="text-muted small mb-3">or</p>
+                            <button class="btn btn-success btn-sm rounded-pill px-4" onclick="document.getElementById('gov-dir-input').click()">Select Folder</button>
+                            <input type="file" id="gov-dir-input" class="d-none" webkitdirectory directory multiple>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gov Dashboard -->
+                <div class="d-none" id="gov-dashboard">
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-end mb-2">
+                        <h5 class="fw-bold mb-0">Processing Dashboard</h5>
+                        <div class="small fw-bold text-success" id="gov-progress-text">0 of 0 images processed</div>
+                    </div>
+                    <div class="progress mb-3" style="height: 10px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" id="gov-progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    
+                    <div class="d-flex gap-2 mb-3">
+                        <button class="btn btn-primary btn-sm" id="btn-start-gov" onclick="startGovProcessing()">▶ Start Processing</button>
+                        <button class="btn btn-danger btn-sm d-none" id="btn-cancel-gov" onclick="cancelGovProcessing()">🛑 Cancel</button>
+                        <button class="btn btn-success btn-sm d-none" id="btn-dl-gov-zip" onclick="downloadGovZip()">📦 Download Processed ZIP</button>
+                    </div>
+
+                    <div class="row mb-3 small fw-medium">
+                        <div class="col-3">Total Files: <span id="gov-stat-total">0</span></div>
+                        <div class="col-3">Valid Images: <span id="gov-stat-images">0</span></div>
+                        <div class="col-3 text-success">Processed: <span id="gov-stat-success">0</span></div>
+                        <div class="col-3 text-danger">Skipped/Failed: <span id="gov-stat-skipped">0</span></div>
+                    </div>
+
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm table-bordered table-hover align-middle small bg-white">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Name / Candidate ID</th>
+                                    <th>Original File</th>
+                                    <th>Output File</th>
+                                    <th>Type</th>
+                                    <th>Dimensions</th>
+                                    <th>DPI</th>
+                                    <th>File Size</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="gov-table-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Batch Processing Module -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="upload-card shadow-lg border-primary border-2" style="height: auto;">
+                <h4 class="fw-bold mb-3 text-primary"><span class="material-icons-round align-text-bottom me-2">folder_copy</span>Batch Candidate Processing</h4>
+                <p class="text-muted">Process multiple candidates at once by uploading their folders. The system will automatically detect the photo, signature, and thumb impression files based on their names.</p>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="drop-zone border-primary bg-light" id="batch-drop-zone">
+                            <span class="material-icons-round text-primary fs-1 mb-2">snippet_folder</span>
+                            <p class="mb-1 fw-bold">Drag & Drop Multiple Candidate Folders Here</p>
+                            <p class="text-muted small mb-3">or</p>
+                            <button class="btn btn-primary btn-sm rounded-pill px-4" onclick="document.getElementById('batch-dir-input').click()">Select Folders</button>
+                            <input type="file" id="batch-dir-input" class="d-none" webkitdirectory directory multiple>
+                        </div>
+                    </div>
+                    <div class="col-md-6 d-flex flex-column justify-content-center">
+                        <div class="bg-white p-3 rounded border h-100">
+                            <h6 class="fw-bold">Supports:</h6>
+                            <ul class="small text-muted mb-0">
+                                <li>Folder upload (`webkitdirectory`)</li>
+                                <li>Automatic file detection</li>
+                                <li>Bulk parallel processing</li>
+                                <li>Master ZIP download</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Batch Progress Dashboard -->
+                <div class="d-none" id="batch-dashboard">
+                    <hr>
+                    <div class="d-flex justify-content-between align-items-end mb-2">
+                        <h5 class="fw-bold mb-0">Processing Dashboard</h5>
+                        <div class="small fw-bold text-primary" id="batch-progress-text">0 of 0 candidates processed</div>
+                    </div>
+                    <div class="progress mb-3" style="height: 10px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" id="batch-progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    
+                    <div class="d-flex gap-2 mb-3">
+                        <button class="btn btn-success btn-sm" id="btn-start-batch" onclick="startBatchProcessing()">▶ Start Processing</button>
+                        <button class="btn btn-danger btn-sm d-none" id="btn-cancel-batch" onclick="cancelBatchProcessing()">🛑 Cancel</button>
+                        <button class="btn btn-primary btn-sm d-none" id="btn-dl-batch-zip" onclick="downloadBatchZip()">📦 Download Processed_Candidates.zip</button>
+                    </div>
+
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-sm table-bordered table-hover align-middle small bg-white">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th>Candidate Name</th>
+                                    <th class="text-center">Photo</th>
+                                    <th class="text-center">Signature</th>
+                                    <th class="text-center">Thumb</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="batch-table-body">
+                                <!-- Populated via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <h4 class="fw-bold mb-4 border-bottom pb-2 text-secondary">Individual Processing</h4>
+    
+    <!-- Candidate Info Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="upload-card" style="height: auto;">
+                <h5 class="fw-bold mb-3"><span class="material-icons-round align-text-bottom me-2 text-primary">person</span>Candidate Information</h5>
+                <div class="mb-2">
+                    <label class="form-label fw-bold">Candidate Name <span class="text-danger">*</span></label>
+                    <input type="text" class="form-control form-control-lg border-2 shadow-sm" id="candidate-name" placeholder="Enter Candidate Full Name">
+                    <div class="form-text">This name will be used for all downloaded files and ZIP folder names.</div>
+                    <div id="name-validation-msg" class="text-danger small fw-medium mt-1">
+                        Please enter the candidate name (min 3 chars) before downloading files.
+                    </div>
+                </div>
+
+                <div class="mt-3 p-3 bg-light rounded-3 border" id="preview-section" style="opacity: 0.5;">
+                    <h6 class="fw-bold small text-muted mb-2">Download Preview</h6>
+                    <div class="row small font-monospace text-secondary" id="preview-list">
+                        <div class="col-md-6 mb-1"><strong>Photo:</strong> <span id="prev-photo">Photo.jpg</span></div>
+                        <div class="col-md-6 mb-1"><strong>Signature:</strong> <span id="prev-sig">Sign.jpg</span></div>
+                        <div class="col-md-6 mb-1"><strong>Thumb:</strong> <span id="prev-thumb">Thumb.jpg</span></div>
+                        <div class="col-md-6 mb-1"><strong>Document:</strong> <span id="prev-document">Document.pdf</span></div>
+                        <div class="col-md-6 mb-1"><strong>ZIP:</strong> <span id="prev-zip">.zip</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" id="upload-modules">
+        <!-- Will be populated by JS -->
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="download-center">
+                <h4 class="fw-bold mb-4 border-bottom pb-2"><span class="material-icons-round align-text-bottom me-2 text-primary">download</span>Download Center</h4>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="fw-bold mb-3 text-muted">Processed Files Status</h6>
+                        <ul class="list-group list-group-flush mb-4" id="dc-status-list">
+                            <!-- Status list -->
+                        </ul>
+                        <div class="fw-bold text-primary mb-3" id="dc-count-summary">0 of 4 Files Ready</div>
+                    </div>
+                    <div class="col-md-6 d-flex flex-column justify-content-center align-items-center bg-light rounded-3 p-4 border">
+                        <button id="btn-bulk-download" class="btn btn-primary btn-lg rounded-pill px-4 shadow-sm w-100 mb-2" disabled onclick="downloadAllZip()">
+                            <span class="material-icons-round align-text-bottom me-1">archive</span> Download All Images (.ZIP)
+                        </button>
+                        <div id="zip-loading" class="text-muted small d-none"><div class="spinner-border spinner-border-sm me-1" role="status"></div> Creating ZIP...</div>
+                        <div id="zip-success" class="text-success small fw-medium mt-2 d-none">
+                            <span class="material-icons-round fs-6 align-text-bottom">check_circle</span> ZIP created successfully.<br>Downloaded: <span id="dl-zip-name"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const API_URL = '/api/process-image/';
+
+        const configs = [
+        { id: 'person-photo', title: '1. Upload Person Photo', shortName: 'Person Photo', suffix: ' Photo.jpg', defaults: { width: 132, height: 170, minSize: 10, maxSize: 50, dpi: 270, format: 'JPEG', algo: 'Lanczos3' } },
+        { id: 'signature', title: '2. Upload Signature', shortName: 'Signature', suffix: ' Sign.jpg', defaults: { width: 170, height: 132, minSize: 5, maxSize: 20, dpi: 180, format: 'JPEG', algo: 'Lanczos3' } },
+        { id: 'thumb-impression', title: '3. Upload Thumb Impression', shortName: 'Thumb Impression', suffix: ' Thumb.jpg', defaults: { width: 170, height: 132, minSize: 5, maxSize: 20, dpi: 180, format: 'JPEG', algo: 'Lanczos3' } },
+        { id: 'document', title: '4. Upload Consent Form', shortName: 'Consent Form', kind: 'document', suffix: ' Document.pdf', defaults: { maxInputMb: 2, targetKb: 45, minKb: 20, maxKb: 50, format: 'PDF' } }
+    ];
+
+    const state = {};
+    configs.forEach(c => { state[c.id] = { ...c.defaults }; });
+
+    const processedBlobs = {};
+    
+    let sanitizedCandidateName = "";
+    
+    function getSanitizedName(raw) {
+        let cleaned = raw.replace(/[\\/:"*?<>|]/g, '').replace(/\s+/g, ' ');
+        return cleaned.trim();
+    }
+
+    const nameInput = document.getElementById('candidate-name');
+    nameInput.addEventListener('input', (e) => {
+        const raw = e.target.value;
+        sanitizedCandidateName = getSanitizedName(raw);
+        updateNameUI();
+    });
+
+    nameInput.addEventListener('blur', (e) => {
+        e.target.value = getSanitizedName(e.target.value);
+        sanitizedCandidateName = e.target.value;
+        updateNameUI();
+    });
+
+    function updateNameUI() {
+        const isValid = sanitizedCandidateName.length >= 3;
+        
+        document.getElementById('prev-photo').innerText = generateGovernmentFilename(sanitizedCandidateName, 'photo');
+        document.getElementById('prev-sig').innerText = generateGovernmentFilename(sanitizedCandidateName, 'signature');
+        document.getElementById('prev-thumb').innerText = generateGovernmentFilename(sanitizedCandidateName, 'thumb');
+        document.getElementById('prev-document').innerText = generateGovernmentFilename(sanitizedCandidateName, 'document');
+        document.getElementById('prev-zip').innerText = sanitizedCandidateName ? `${sanitizedCandidateName}.zip` : '.zip';
+        
+        document.getElementById('preview-section').style.opacity = isValid ? '1' : '0.5';
+        
+        const validationMsg = document.getElementById('name-validation-msg');
+        if(isValid) {
+            validationMsg.classList.add('d-none');
+            nameInput.classList.remove('is-invalid');
+            nameInput.classList.add('is-valid');
+        } else {
+            validationMsg.classList.remove('d-none');
+            nameInput.classList.add('is-invalid');
+            nameInput.classList.remove('is-valid');
+        }
+        
+        updateDownloadCenter();
+    }
+
+    function createCard(c) {
+        if (c.kind === 'document') {
+            return `
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="upload-card" id="card-${c.id}">
+                <h5 class="fw-bold mb-3">${c.title}</h5>
+
+                <div class="drop-zone" id="drop-${c.id}">
+                    <span class="material-icons-round text-primary fs-1 mb-2">description</span>
+                    <p class="mb-1 fw-medium">Drag & Drop Consent Form Here</p>
+                    <p class="text-muted small mb-3">or</p>
+                    <button class="btn btn-primary btn-sm rounded-pill px-4" onclick="document.getElementById('input-${c.id}').click()">Browse Files</button>
+                    <input type="file" id="input-${c.id}" class="d-none" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf">
+                    <p class="text-muted small mt-3 mb-0">JPG, JPEG, PNG, PDF<br>Maximum input size: <strong>2 MB</strong></p>
+                </div>
+
+                <div class="preview-container mt-3" id="preview-cont-${c.id}">
+                    <div class="alert alert-success py-2 mb-3">
+                        <div class="fw-bold mb-1">Compression Complete</div>
+                        <div class="small" id="doc-stats-${c.id}"></div>
+                    </div>
+                    <div class="mb-2">
+                        <iframe id="doc-preview-${c.id}" class="w-100 border rounded" style="height:220px;background:#f8f9fa;" title="PDF Preview"></iframe>
+                    </div>
+                    <div class="d-flex gap-2 mt-3 flex-wrap">
+                        <button class="btn btn-outline-primary btn-sm flex-fill" onclick="previewDocument('${c.id}')">Preview</button>
+                        <button class="btn btn-success btn-sm flex-fill btn-dl-indiv" id="dl-${c.id}" onclick="downloadIndividual('${c.id}')">Download PDF</button>
+                        <button class="btn btn-outline-danger btn-sm flex-fill" onclick="resetCard('${c.id}')">Remove / Replace</button>
+                    </div>
+                </div>
+
+                <hr class="my-3">
+
+                <div class="active-settings" id="active-summary-${c.id}">
+                    <div class="fw-bold mb-1"><span class="material-icons-round fs-6 align-text-bottom">check_circle</span> Active Settings</div>
+                    Input: JPG, JPEG, PNG, PDF<br>
+                    Maximum Input: 2 MB<br>
+                    Target Size: <strong>45 KB</strong><br>
+                    Allowed Size: 20–50 KB<br>
+                    Output: <strong>PDF</strong><br>
+                    Compression: Automatic
+                </div>
+            </div>
+        </div>`;
+        }
+
+        return `
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="upload-card" id="card-${c.id}">
+                <h5 class="fw-bold mb-3">${c.title}</h5>
+                
+                <div id="unsaved-warning-${c.id}" class="alert alert-warning small d-none py-2 mb-3">
+                    <span class="fw-bold">Warning:</span> You have unsaved changes. Click 'Apply Changes' before processing.
+                </div>
+
+                <div class="drop-zone" id="drop-${c.id}">
+                    <span class="material-icons-round text-primary fs-1 mb-2">cloud_upload</span>
+                    <p class="mb-1 fw-medium">Drag & Drop Image Here</p>
+                    <p class="text-muted small mb-3">or</p>
+                    <button class="btn btn-primary btn-sm rounded-pill px-4" onclick="document.getElementById('input-${c.id}').click()">Browse Files</button>
+                    <input type="file" id="input-${c.id}" class="d-none" accept=".jpg,.jpeg,.png,.webp,.bmp,.tiff">
+                </div>
+
+                <div class="preview-container mt-3" id="preview-cont-${c.id}">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <p class="small fw-bold mb-1 text-muted">Original</p>
+                            <img id="orig-img-${c.id}" class="preview-img mb-2">
+                            <div id="orig-props-${c.id}" class="props-table text-muted"></div>
+                        </div>
+                        <div class="col-6">
+                            <p class="small fw-bold mb-1 text-success">Processed</p>
+                            <img id="proc-img-${c.id}" class="preview-img mb-2">
+                            <div id="proc-props-${c.id}" class="props-table text-success"></div>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2 mt-3">
+                        <button class="btn btn-outline-danger btn-sm flex-fill" onclick="resetCard('${c.id}')">Remove</button>
+                        <button class="btn btn-success btn-sm flex-fill d-none btn-dl-indiv" id="dl-${c.id}" onclick="downloadIndividual('${c.id}')">Download JPEG</button>
+                    </div>
+                </div>
+
+                <hr class="my-3">
+                
+                <div class="form-check form-switch mb-2">
+                    <input class="form-check-input" type="checkbox" id="adv-toggle-${c.id}" onchange="toggleSettings('${c.id}')">
+                    <label class="form-check-label small fw-medium text-muted" for="adv-toggle-${c.id}">Edit Specifications</label>
+                </div>
+                
+                <div class="active-settings" id="active-summary-${c.id}">
+                    <div class="fw-bold mb-1"><span class="material-icons-round fs-6 align-text-bottom">check_circle</span> Active Settings</div>
+                    <span id="summary-w-${c.id}">${c.defaults.width}</span> × <span id="summary-h-${c.id}">${c.defaults.height}</span> px<br>
+                    <span id="summary-s-${c.id}">${c.defaults.minSize}–${c.defaults.maxSize}</span> KB | <span id="summary-dpi-${c.id}">${c.defaults.dpi}</span> DPI<br>
+                    Algorithm: <span id="summary-algo-${c.id}">${c.defaults.algo}</span><br>
+                    Output: JPEG
+                </div>
+
+                <div class="settings-panel" id="settings-${c.id}">
+                    <h6 class="fw-bold mb-3 small text-muted border-bottom pb-2">Edit Specifications</h6>
+                    <div class="row g-2 small">
+                        <div class="col-6">
+                            <label class="form-label mb-0">Width (px)</label>
+                            <input type="number" class="form-control form-control-sm spec-input-${c.id}" id="w-${c.id}" value="${c.defaults.width}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label mb-0">Height (px)</label>
+                            <input type="number" class="form-control form-control-sm spec-input-${c.id}" id="h-${c.id}" value="${c.defaults.height}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label mb-0">Min Size (KB)</label>
+                            <input type="number" class="form-control form-control-sm spec-input-${c.id}" id="min-s-${c.id}" value="${c.defaults.minSize}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label mb-0">Max Size (KB)</label>
+                            <input type="number" class="form-control form-control-sm spec-input-${c.id}" id="max-s-${c.id}" value="${c.defaults.maxSize}">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label mb-0">DPI</label>
+                            <input type="number" class="form-control form-control-sm spec-input-${c.id}" id="dpi-${c.id}" value="${c.defaults.dpi}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label mb-0">Algorithm</label>
+                            <select class="form-select form-select-sm spec-input-${c.id}" id="algo-${c.id}">
+                                <option value="Lanczos3" selected>Lanczos3</option>
+                                <option value="Bicubic Sharper">Bicubic Sharper</option>
+                                <option value="INTER_AREA">INTER_AREA</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="success-msg-${c.id}" class="text-success small fw-medium mt-2 d-none">
+                        <span class="material-icons-round fs-6 align-text-bottom">check</span> Specifications applied successfully.
+                    </div>
+
+                    <hr class="my-3">
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-outline-secondary btn-sm flex-fill" onclick="resetToDefault('${c.id}')">🔄 Reset</button>
+                        <button class="btn btn-secondary btn-sm flex-fill" onclick="cancelEdits('${c.id}')">↩️ Cancel</button>
+                        <button class="btn btn-primary btn-sm flex-fill" id="btn-apply-${c.id}" onclick="applyChanges('${c.id}')" disabled>✅ Apply</button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    document.getElementById('upload-modules').innerHTML = configs.map(createCard).join('');
+    
+    updateDownloadCenter();
+
+    configs.forEach(c => {
+        const drop = document.getElementById(`drop-${c.id}`);
+        const input = document.getElementById(`input-${c.id}`);
+        
+        drop.addEventListener('dragover', e => { e.preventDefault(); if(!drop.classList.contains('disabled')) drop.classList.add('dragover'); });
+        drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+        drop.addEventListener('drop', e => {
+            e.preventDefault();
+            drop.classList.remove('dragover');
+            if(!drop.classList.contains('disabled') && e.dataTransfer.files.length) {
+                handleUpload(c.id, e.dataTransfer.files[0]);
+            }
+        });
+
+        input.addEventListener('change', e => {
+            if(e.target.files.length) handleUpload(c.id, e.target.files[0]);
+        });
+
+        if (c.kind !== 'document') {
+            document.querySelectorAll(`.spec-input-${c.id}`).forEach(el => {
+                el.addEventListener('input', () => checkUnsavedChanges(c.id));
+            });
+        }
+    });
+
+    function toggleSettings(id) {
+        const checked = document.getElementById(`adv-toggle-${id}`).checked;
+        document.getElementById(`settings-${id}`).style.display = checked ? 'block' : 'none';
+        document.getElementById(`active-summary-${id}`).style.display = checked ? 'none' : 'block';
+        if(!checked) cancelEdits(id);
+    }
+
+    function checkUnsavedChanges(id) {
+        const current = state[id];
+        const w = document.getElementById(`w-${id}`).value;
+        const h = document.getElementById(`h-${id}`).value;
+        const min_s = document.getElementById(`min-s-${id}`).value;
+        const max_s = document.getElementById(`max-s-${id}`).value;
+        const dpi = document.getElementById(`dpi-${id}`).value;
+        const algo = document.getElementById(`algo-${id}`).value;
+
+        const hasChanged = w != current.width || h != current.height || min_s != current.minSize || max_s != current.maxSize || dpi != current.dpi || algo != current.algo;
+        
+        document.getElementById(`btn-apply-${id}`).disabled = !hasChanged;
+        
+        const drop = document.getElementById(`drop-${id}`);
+        const warning = document.getElementById(`unsaved-warning-${id}`);
+        
+        if(hasChanged) {
+            drop.classList.add('disabled');
+            document.getElementById(`input-${id}`).disabled = true;
+            warning.classList.remove('d-none');
+        } else {
+            drop.classList.remove('disabled');
+            document.getElementById(`input-${id}`).disabled = false;
+            warning.classList.add('d-none');
+        }
+        document.getElementById(`success-msg-${id}`).classList.add('d-none');
+    }
+
+    function applyChanges(id) {
+        const w = document.getElementById(`w-${id}`).value;
+        const h = document.getElementById(`h-${id}`).value;
+        const min_s = document.getElementById(`min-s-${id}`).value;
+        const max_s = document.getElementById(`max-s-${id}`).value;
+        const dpi = document.getElementById(`dpi-${id}`).value;
+        const algo = document.getElementById(`algo-${id}`).value;
+
+        if(w <= 0 || h <= 0 || min_s <= 0 || max_s <= 0 || parseInt(min_s) >= parseInt(max_s) || dpi <= 0) {
+            alert("Please enter valid positive numbers for all specifications.");
+            return;
+        }
+
+        state[id] = {
+            width: w,
+            height: h,
+            minSize: parseInt(min_s, 10),
+            maxSize: parseInt(max_s, 10),
+            dpi: dpi,
+            algo: algo,
+            format: 'JPEG'
+        };
+
+        document.getElementById(`summary-w-${id}`).innerText = w;
+        document.getElementById(`summary-h-${id}`).innerText = h;
+        document.getElementById(`summary-s-${id}`).innerText = `${min_s}–${max_s}`;
+        document.getElementById(`summary-dpi-${id}`).innerText = dpi;
+        document.getElementById(`summary-algo-${id}`).innerText = algo;
+
+        document.getElementById(`success-msg-${id}`).classList.remove('d-none');
+        checkUnsavedChanges(id);
+    }
+
+    function cancelEdits(id) {
+        const current = state[id];
+        document.getElementById(`w-${id}`).value = current.width;
+        document.getElementById(`h-${id}`).value = current.height;
+        document.getElementById(`min-s-${id}`).value = current.minSize;
+        document.getElementById(`max-s-${id}`).value = current.maxSize;
+        document.getElementById(`dpi-${id}`).value = current.dpi;
+        document.getElementById(`algo-${id}`).value = current.algo;
+        checkUnsavedChanges(id);
+    }
+
+    function resetToDefault(id) {
+        const def = configs.find(x => x.id === id).defaults;
+        document.getElementById(`w-${id}`).value = def.width;
+        document.getElementById(`h-${id}`).value = def.height;
+        document.getElementById(`min-s-${id}`).value = def.minSize;
+        document.getElementById(`max-s-${id}`).value = def.maxSize;
+        document.getElementById(`dpi-${id}`).value = def.dpi;
+        document.getElementById(`algo-${id}`).value = def.algo;
+        checkUnsavedChanges(id);
+    }
+
+    function resetCard(id) {
+        document.getElementById(`input-${id}`).value = '';
+        document.getElementById(`drop-${id}`).style.display = 'block';
+        document.getElementById(`preview-cont-${id}`).style.display = 'none';
+        const frame = document.getElementById(`doc-preview-${id}`);
+        if (frame) frame.removeAttribute('src');
+        if (processedBlobs[id] && processedBlobs[id].url) URL.revokeObjectURL(processedBlobs[id].url);
+        delete processedBlobs[id];
+        updateDownloadCenter();
+    }
+
+    function handleUpload(id, file) {
+        const cfg = configs.find(x => x.id === id);
+        if (cfg && cfg.kind === 'document') return processDocument(id, file);
+        return processImage(id, file);
+    }
+
+    function previewDocument(id) {
+        if (!processedBlobs[id] || !processedBlobs[id].url) return;
+        window.open(processedBlobs[id].url, '_blank');
+    }
+
+    async function processDocument(id, file) {
+        const drop = document.getElementById(`drop-${id}`);
+        const preview = document.getElementById(`preview-cont-${id}`);
+        const statsEl = document.getElementById(`doc-stats-${id}`);
+        const frame = document.getElementById(`doc-preview-${id}`);
+
+        try {
+            DocumentCompressor.validateFile(file);
+        } catch (err) {
+            alert(err.message);
+            return;
+        }
+
+        drop.style.display = 'none';
+        preview.style.display = 'block';
+        statsEl.innerHTML = '<span class="text-muted">Compressing toward 45 KB…</span>';
+        frame.removeAttribute('src');
+
+        try {
+            const { file: outFile, stats } = await DocumentCompressor.compress(file);
+            if (processedBlobs[id] && processedBlobs[id].url) URL.revokeObjectURL(processedBlobs[id].url);
+            const url = URL.createObjectURL(outFile);
+            processedBlobs[id] = { blob: outFile, url, valid: true, isPdf: true, stats };
+
+            statsEl.innerHTML = `
+                <div><strong>Original File:</strong> ${stats.originalName}</div>
+                <div><strong>Original Size:</strong> ${stats.originalSizeLabel}</div>
+                <div><strong>Output Format:</strong> PDF</div>
+                <div><strong>Final Size:</strong> ${stats.finalSizeLabel}</div>
+                <div><strong>Compression:</strong> ${stats.compressionPercent}%</div>
+            `;
+            frame.src = url;
+            updateDownloadCenter();
+        } catch (err) {
+            console.error(err);
+            statsEl.innerHTML = `<span class="text-danger">${err.message || 'Unable to convert this file to PDF.'}</span>`;
+            if (processedBlobs[id] && processedBlobs[id].url) URL.revokeObjectURL(processedBlobs[id].url);
+            delete processedBlobs[id];
+            updateDownloadCenter();
+        }
+    }
+
+    async function processImage(id, file) {
+        if(!['image/jpeg','image/png','image/webp','image/bmp','image/tiff'].includes(file.type)) {
+            alert('Unsupported format. Please upload JPG, PNG, WEBP, BMP, or TIFF.');
+            return;
+        }
+
+        document.getElementById(`drop-${id}`).style.display = 'none';
+        document.getElementById(`preview-cont-${id}`).style.display = 'block';
+        
+        const origUrl = URL.createObjectURL(file);
+        document.getElementById(`orig-img-${id}`).src = origUrl;
+        
+        const origImg = new Image();
+        origImg.onload = () => {
+            document.getElementById(`orig-props-${id}`).innerHTML = `
+                ${origImg.width}x${origImg.height}px<br>
+                ${(file.size/1024).toFixed(1)} KB<br>
+                ${file.type.split('/')[1].toUpperCase()}
+            `;
+        };
+        origImg.src = origUrl;
+
+        const fd = new FormData();
+        fd.append('image', file);
+        const current = state[id];
+        fd.append('width', current.width);
+        fd.append('height', current.height);
+        fd.append('minSize', current.minSize);
+        fd.append('maxSize', current.maxSize);
+        fd.append('dpi', current.dpi);
+        fd.append('resizeAlgorithm', current.algo);
+
+        document.getElementById(`proc-props-${id}`).innerHTML = 'Processing...';
+
+        try {
+            const res = await fetch(API_URL, { method: 'POST', body: fd });
+            if(!res.ok) throw new Error(await res.text());
+            
+            const blob = await res.blob();
+            
+            processedBlobs[id] = {
+                blob: blob,
+                url: URL.createObjectURL(blob)
+            };
+            updateDownloadCenter();
+
+            document.getElementById(`proc-img-${id}`).src = processedBlobs[id].url;
+            
+            const w = res.headers.get('X-Processed-Width') || current.width;
+            const h = res.headers.get('X-Processed-Height') || current.height;
+            const dpi = res.headers.get('X-Processed-DPI') || current.dpi;
+            const q = res.headers.get('X-Processed-Quality') || 'N/A';
+            const status = res.headers.get('X-Compression-Status');
+            
+                                                
+            const minK = current.minSize;
+            const maxK = current.maxSize;
+            const fSize = (blob.size/1024).toFixed(1);
+            let statusMessage = '';
+            let isSuccess = false;
+            
+            if (status === 'below_minimum') {
+                statusMessage = `<div class="text-danger small mt-2">
+                    <strong>⚠ File size below minimum</strong><br>
+                    Current size: ${fSize} KB<br>
+                    Required: ${minK}–${maxK} KB
+                </div>`;
+            } else if (status === 'exceeds_maximum') {
+                statusMessage = `<div class="text-danger small mt-2">
+                    <strong>⚠ File size exceeds maximum</strong><br>
+                    Current size: ${fSize} KB<br>
+                    Required: ${minK}–${maxK} KB
+                </div>`;
+            } else {
+                isSuccess = true;
+                statusMessage = `<div class="text-success small mt-2">
+                    ✓ ${w} × ${h} px @ ${dpi} DPI<br>
+                    ✓ File size within ${minK}–${maxK} KB<br>
+                    ✓ JPEG
+                </div>`;
+            }
+            
+            document.getElementById(`proc-props-${id}`).innerHTML = `
+                <div class="fw-bold fs-5 ${isSuccess ? 'text-dark' : 'text-danger'}">${fSize} KB</div>
+                <div class="text-muted small">JPEG (Q: ${q})</div>
+                ${statusMessage}
+            `;
+            
+            if (!isSuccess) {
+                document.getElementById(`dl-${id}`).classList.add('d-none');
+            } else {
+                document.getElementById(`dl-${id}`).classList.remove('d-none');
+            }
+            
+            document.getElementById(`dl-${id}`).classList.remove('d-none');
+        } catch (err) {
+            console.error(err);
+            document.getElementById(`proc-props-${id}`).innerHTML = '<span class="text-danger">Failed</span>';
+            delete processedBlobs[id];
+            updateDownloadCenter();
+        }
+    }
+    
+    function downloadIndividual(id) {
+        if (!processedBlobs[id] || !processedBlobs[id].url) return;
+        const cfg = configs.find(x => x.id === id);
+        const isDoc = cfg && cfg.kind === 'document';
+
+        if (!isDoc && sanitizedCandidateName.length < 3) {
+            alert("Please enter a valid candidate name (min 3 chars) first.");
+            document.getElementById('candidate-name').focus();
+            return;
+        }
+
+        let filename;
+        if (isDoc) {
+            filename = sanitizedCandidateName.length >= 3
+                ? generateGovernmentFilename(sanitizedCandidateName, id)
+                : (processedBlobs[id].stats && processedBlobs[id].stats.originalName
+                    ? processedBlobs[id].stats.originalName.replace(/\.[^.]+$/, '') + '.pdf'
+                    : 'document.pdf');
+        } else {
+            filename = generateGovernmentFilename(sanitizedCandidateName, id);
+        }
+
+        const a = document.createElement('a');
+        a.href = processedBlobs[id].url;
+        a.download = filename;
+        a.click();
+    }
+
+    function updateDownloadCenter() {
+        const listEl = document.getElementById('dc-status-list');
+        let readyCount = 0;
+        const isNameValid = sanitizedCandidateName.length >= 3;
+        
+        listEl.innerHTML = configs.map(c => {
+            const isReady = !!processedBlobs[c.id];
+            if(isReady) readyCount++;
+            
+            return `
+            <li class="list-group-item d-flex justify-content-between align-items-center bg-transparent px-0 border-0">
+                <span class="fw-medium">${c.shortName}</span>
+                ${isReady 
+                    ? `<span class="status-ready"><span class="material-icons-round fs-6 align-text-bottom">check</span> Ready</span>`
+                    : `<span class="status-waiting small">Waiting...</span>`
+                }
+            </li>`;
+        }).join('');
+
+        document.getElementById('dc-count-summary').innerText = `${readyCount} of ${configs.length} Files Ready`;
+        
+        const bulkBtn = document.getElementById('btn-bulk-download');
+        bulkBtn.disabled = (readyCount === 0 || !isNameValid);
+        
+        document.querySelectorAll('.btn-dl-indiv').forEach(btn => {
+            if(!isNameValid) btn.classList.add('disabled');
+            else btn.classList.remove('disabled');
+        });
+        
+        document.getElementById('zip-success').classList.add('d-none');
+    }
+
+    async function downloadAllZip() {
+        if(Object.keys(processedBlobs).length === 0 || sanitizedCandidateName.length < 3) return;
+        
+        const btn = document.getElementById('btn-bulk-download');
+        const loader = document.getElementById('zip-loading');
+        const success = document.getElementById('zip-success');
+        
+        btn.disabled = true;
+        loader.classList.remove('d-none');
+        success.classList.add('d-none');
+
+        try {
+            const zip = new JSZip();
+            const folder = zip.folder(sanitizedCandidateName);
+            
+            configs.forEach(c => {
+                if(processedBlobs[c.id]) {
+                    folder.file(sanitizedCandidateName + c.suffix, processedBlobs[c.id].blob);
+                }
+            });
+
+            const content = await zip.generateAsync({ type: "blob" });
+            
+            const url = URL.createObjectURL(content);
+            const a = document.createElement('a');
+            a.href = url;
+            const zipFilename = `${sanitizedCandidateName}.zip`;
+            a.download = zipFilename;
+            a.click();
+            
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+            loader.classList.add('d-none');
+            document.getElementById('dl-zip-name').innerText = zipFilename;
+            success.classList.remove('d-none');
+        } catch (err) {
+            console.error('ZIP generation failed:', err);
+            alert("Failed to create ZIP archive.");
+            loader.classList.add('d-none');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    
+    // --- Government Image Processing Logic ---
+    const MAX_GOVERNMENT_FILENAME_LENGTH = 14;
+    let govFiles = [];
+    let govProcessed = [];
+    let govCancel = false;
+
+    const govDrop = document.getElementById('gov-drop-zone');
+    const govInput = document.getElementById('gov-dir-input');
+
+    if(govDrop) {
+        govDrop.addEventListener('dragover', e => { e.preventDefault(); govDrop.classList.add('dragover'); });
+        govDrop.addEventListener('dragleave', () => govDrop.classList.remove('dragover'));
+        govDrop.addEventListener('drop', e => {
+            e.preventDefault();
+            govDrop.classList.remove('dragover');
+            handleGovFiles(e.dataTransfer.items);
+        });
+    }
+    
+    const govUploadType = document.getElementById('gov-upload-type');
+    const govUploadTypeHelp = document.getElementById('gov-upload-type-help');
+
+    function updateGovUploadTypeHelp() {
+        if (!govUploadType || !govUploadTypeHelp) return;
+        const type = govUploadType.value;
+        const messageMap = {
+            photo: 'Photo: All images in the selected folder will be processed according to the configured Photo requirements.',
+            signature: 'Signature: All images in the selected folder will be processed according to the configured Signature requirements.',
+            thumb: 'Thumb Impression: All images in the selected folder will be processed according to the configured Thumb Impression requirements.'
+        };
+        govUploadTypeHelp.textContent = messageMap[type] || messageMap.photo;
+    }
+
+    if (govUploadType) {
+        govUploadType.addEventListener('change', updateGovUploadTypeHelp);
+    }
+
+    if(govInput) {
+        govInput.addEventListener('change', e => {
+            handleGovFiles(e.target.files, true);
+        });
+    }
+
+    updateGovUploadTypeHelp();
+
+        function generateGovernmentFilename(originalName, type) {
+        if (!originalName) originalName = "";
+        let base = originalName;
+        const lastDot = base.lastIndexOf('.');
+        if (lastDot > 0) base = base.substring(0, lastDot);
+        base = base.replace(/photo|sign|thumb|signature/ig, '').trim();
+        const idMatch = base.match(/\b\d{8}\b/);
+        if (idMatch) {
+            return idMatch[0] + '.jpg';
+        }
+        let shortName = base.replace(/[_-]/g, ' ').trim();
+        if (!shortName) {
+            shortName = "";
+        } else if (shortName.length > 7) {
+            shortName = shortName.substring(0, 7).trim();
+        }
+        let suffix = "";
+        if (type === 'photo' || type === 'person-photo') suffix = " Photo";
+        if (type === 'signature') suffix = " Sign";
+        if (type === 'thumb' || type === 'thumb-impression') suffix = " Thumb";
+        if (type === 'document') {
+            if (!shortName) return 'Document.pdf';
+            return shortName + ' Document.pdf';
+        }
+        if (!shortName) return suffix.trim() + '.jpg';
+        return shortName + suffix + '.jpg';
+    }
+
+    async function handleGovFiles(items, fromInput=false) {
+        govFiles = [];
+        govProcessed = [];
+        document.getElementById('gov-dashboard').classList.remove('d-none');
+        document.getElementById('btn-start-gov').classList.remove('d-none');
+        document.getElementById('btn-dl-gov-zip').classList.add('d-none');
+        document.getElementById('gov-progress-bar').style.width = '0%';
+        document.getElementById('gov-progress-bar').classList.remove('bg-success');
+        
+        let totalCount = 0;
+        const validExts = ['jpg','jpeg','png','webp','bmp','tiff'];
+
+        const processFile = (file) => {
+            totalCount++;
+            const ext = file.name.split('.').pop().toLowerCase();
+            if(validExts.includes(ext)) {
+                govFiles.push({ file: file, status: 'Ready' });
+            } else {
+                govProcessed.push({
+                    originalName: file.name,
+                    status: 'Skipped (Unsupported)'
+                });
+            }
+        };
+
+        if (fromInput) {
+            for(let i=0; i<items.length; i++) {
+                processFile(items[i]);
+            }
+        } else {
+            const traverseFileTree = async (item) => {
+                if (item.isFile) {
+                    await new Promise(resolve => {
+                        item.file(file => {
+                            processFile(file);
+                            resolve();
+                        });
+                    });
+                } else if (item.isDirectory) {
+                    const dirReader = item.createReader();
+                    const entries = await new Promise(res => dirReader.readEntries(res));
+                    for (const entry of entries) {
+                        await traverseFileTree(entry);
+                    }
+                }
+            };
+            
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i].webkitGetAsEntry();
+                if (item) await traverseFileTree(item);
+            }
+        }
+        
+        document.getElementById('gov-stat-total').innerText = totalCount;
+        document.getElementById('gov-stat-images').innerText = govFiles.length;
+        document.getElementById('gov-stat-success').innerText = "0";
+        document.getElementById('gov-stat-skipped').innerText = govProcessed.length;
+        renderGovTable();
+    }
+
+    function renderGovTable() {
+        const tbody = document.getElementById('gov-table-body');
+        let html = '';
+        
+        const allItems = [...govFiles, ...govProcessed];
+        
+        allItems.forEach(c => {
+            let statusClass = "text-muted";
+            const stat = c.status || 'Waiting';
+            if (stat === 'Success') statusClass = "text-success fw-bold";
+            if (stat.includes('Skipped') || stat.includes('Failed')) statusClass = "text-danger fw-bold";
+            if (stat === 'Processing...') statusClass = "text-primary fw-bold";
+            
+            html += `<tr>
+                <td class="fw-medium">${c.nameId || '-'}</td>
+                <td>${c.originalName || (c.file ? c.file.name : '-')}</td>
+                <td>${c.outputName || '-'}</td>
+                <td>${c.type || '-'}</td>
+                <td>${c.dimensions || '-'}</td>
+                <td>${c.dpi ? c.dpi + ' DPI' : '-'}</td>
+                <td>${c.fileSize || '-'}</td>
+                <td class="${statusClass}">${stat}</td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+    }
+
+    async function startGovProcessing() {
+        if(govFiles.length === 0) return;
+        
+        const type = document.getElementById('gov-upload-type').value;
+        const cnfId = type === 'photo' ? 'person-photo' : (type === 'signature' ? 'signature' : 'thumb-impression');
+        const cnf = configs.find(x => x.id === cnfId);
+        
+        govCancel = false;
+        document.getElementById('btn-start-gov').classList.add('d-none');
+        document.getElementById('btn-cancel-gov').classList.remove('d-none');
+        document.getElementById('btn-cancel-gov').innerText = "🛑 Cancel";
+        document.getElementById('btn-dl-gov-zip').classList.add('d-none');
+        
+        let successCount = 0;
+        let failCount = 0;
+        
+        for (let i = 0; i < govFiles.length; i++) {
+            if(govCancel) break;
+            
+            const item = govFiles[i];
+            if(item.status === 'Success') continue;
+            
+            item.status = 'Processing...';
+            renderGovTable();
+            
+            try {
+                const fd = new FormData();
+                fd.append('image', item.file);
+                fd.append('width', cnf.defaults.width);
+                fd.append('height', cnf.defaults.height);
+                fd.append('minSize', cnf.defaults.minSize);
+                fd.append('maxSize', cnf.defaults.maxSize);
+                fd.append('dpi', cnf.defaults.dpi);
+                fd.append('resizeAlgorithm', cnf.defaults.algo);
+
+                const res = await fetch(API_URL, { method: 'POST', body: fd });
+                if(!res.ok) throw new Error("API Error");
+                const status = res.headers.get('X-Compression-Status');
+                if (status === 'below_minimum') throw new Error("File size below minimum");
+                if (status === 'exceeds_maximum') throw new Error("File size exceeds maximum");
+                
+                const blob = await res.blob();
+                
+                item.outputName = generateGovernmentFilename(item.file.name, type);
+                item.nameId = item.outputName.replace('.jpg', '');
+                item.type = type.charAt(0).toUpperCase() + type.slice(1);
+                item.dimensions = `${res.headers.get('X-Processed-Width') || cnf.defaults.width} × ${res.headers.get('X-Processed-Height') || cnf.defaults.height}`;
+                item.dpi = res.headers.get('X-Processed-DPI') || cnf.defaults.dpi;
+                item.fileSize = (blob.size/1024).toFixed(1) + ' KB';
+                item.blob = blob;
+                item.status = 'Success';
+                successCount++;
+            } catch (err) {
+                item.status = 'Failed - ' + err.message;
+                failCount++;
+            }
+            
+            const pct = Math.round(((i + 1) / govFiles.length) * 100);
+            document.getElementById('gov-progress-bar').style.width = `${pct}%`;
+            document.getElementById('gov-progress-text').innerText = `${i + 1} of ${govFiles.length} images processed`;
+            document.getElementById('gov-stat-success').innerText = successCount;
+            
+            const totalFails = failCount + govProcessed.length;
+            document.getElementById('gov-stat-skipped').innerText = totalFails;
+            
+            renderGovTable();
+        }
+        
+        document.getElementById('btn-cancel-gov').classList.add('d-none');
+        document.getElementById('btn-dl-gov-zip').classList.remove('d-none');
+        document.getElementById('gov-progress-bar').classList.add('bg-primary');
+    }
+
+    function cancelGovProcessing() {
+        govCancel = true;
+        document.getElementById('btn-cancel-gov').innerText = "Cancelling...";
+    }
+
+    async function downloadGovZip() {
+        const btn = document.getElementById('btn-dl-gov-zip');
+        btn.disabled = true;
+        btn.innerText = "Creating Master ZIP...";
+        
+        const type = document.getElementById('gov-upload-type').value;
+        const folderName = type.charAt(0).toUpperCase() + type.slice(1);
+        const zipName = `Processed_${folderName}s.zip`;
+        
+        const zip = new JSZip();
+        const folder = zip.folder(folderName);
+        
+        const nameCounts = {};
+        
+        govFiles.forEach(c => {
+            if(c.status === 'Success' && c.blob) {
+                let finalName = c.outputName;
+                if(nameCounts[finalName]) {
+                    nameCounts[finalName]++;
+                    const parts = finalName.split('.jpg');
+                    finalName = `${parts[0]}_${nameCounts[finalName]}.jpg`;
+                } else {
+                    nameCounts[finalName] = 1;
+                }
+                folder.file(finalName, c.blob);
+            }
+        });
+        
+        const content = await zip.generateAsync({ type: "blob" });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = zipName;
+        a.click();
+        
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        btn.disabled = false;
+        btn.innerHTML = "📦 Download Processed ZIP";
+    }
+
+
+    // --- Batch Processing Logic ---
+    let batchCandidates = {}; 
+    let batchCancel = false;
+
+    const batchDrop = document.getElementById('batch-drop-zone');
+    const batchInput = document.getElementById('batch-dir-input');
+    
+    batchDrop.addEventListener('dragover', e => { e.preventDefault(); batchDrop.classList.add('dragover'); });
+    batchDrop.addEventListener('dragleave', () => batchDrop.classList.remove('dragover'));
+    batchDrop.addEventListener('drop', e => {
+        e.preventDefault();
+        batchDrop.classList.remove('dragover');
+        handleBatchFiles(e.dataTransfer.items);
+    });
+    
+    batchInput.addEventListener('change', e => {
+        handleBatchFiles(e.target.files, true);
+    });
+
+    async function handleBatchFiles(items, fromInput=false) {
+        batchCandidates = {};
+        document.getElementById('batch-dashboard').classList.remove('d-none');
+        document.getElementById('btn-start-batch').classList.remove('d-none');
+        document.getElementById('btn-dl-batch-zip').classList.add('d-none');
+        document.getElementById('batch-progress-bar').style.width = '0%';
+        document.getElementById('batch-progress-bar').classList.remove('bg-success');
+        
+        const photoRegex = /photo|person|image|profile|passport|pic/i;
+        const signRegex = /signature|sign|sign_image|sig/i;
+        const thumbRegex = /thumb|thumb|thumb_impression|fingerprint|thumbprint/i;
+        const validExts = ['jpg','jpeg','png','webp','bmp','tiff'];
+
+        const processFile = (file, candidateName) => {
+            const ext = file.name.split('.').pop().toLowerCase();
+            if(!validExts.includes(ext)) return;
+            
+            if(!batchCandidates[candidateName]) {
+                batchCandidates[candidateName] = { name: candidateName, files: {}, processed: {}, status: 'Ready' };
+            }
+            
+            const name = file.name.toLowerCase();
+            if (signRegex.test(name)) batchCandidates[candidateName].files.sign = file;
+            else if (thumbRegex.test(name)) batchCandidates[candidateName].files.thumb = file;
+            else if (photoRegex.test(name)) batchCandidates[candidateName].files.photo = file;
+        };
+
+        if (fromInput) {
+            for(let i=0; i<items.length; i++) {
+                const file = items[i];
+                const parts = file.webkitRelativePath.split('/');
+                if(parts.length >= 2) {
+                    const candidateName = parts[parts.length - 2];
+                    processFile(file, candidateName);
+                }
+            }
+        } else {
+            const traverseFileTree = async (item, path = '') => {
+                if (item.isFile) {
+                    await new Promise(resolve => {
+                        item.file(file => {
+                            const parts = path.split('/');
+                            const candidateName = parts.length > 0 ? parts[0] : 'Unknown';
+                            processFile(file, candidateName);
+                            resolve();
+                        });
+                    });
+                } else if (item.isDirectory) {
+                    const dirReader = item.createReader();
+                    const entries = await new Promise(res => dirReader.readEntries(res));
+                    for (const entry of entries) {
+                        await traverseFileTree(entry, path ? path + '/' + item.name : item.name);
+                    }
+                }
+            };
+            
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i].webkitGetAsEntry();
+                if (item && item.isDirectory) await traverseFileTree(item, item.name);
+            }
+        }
+        
+        renderBatchTable();
+    }
+    
+    function renderBatchTable() {
+        const tbody = document.getElementById('batch-table-body');
+        let html = '';
+        const cands = Object.values(batchCandidates);
+        
+        cands.forEach(c => {
+            const hasPhoto = !!c.files.photo;
+            const hasSign = !!c.files.sign;
+            const hasThumb = !!c.files.thumb;
+            
+            let statusClass = "text-muted";
+            if (c.status.includes('Completed')) statusClass = "text-success fw-bold";
+            if (c.status === 'Failed') statusClass = "text-danger fw-bold";
+            if (c.status === 'Processing...') statusClass = "text-primary fw-bold";
+            if (c.status.includes('Missing')) statusClass = "text-warning fw-bold";
+            
+            html += `<tr>
+                <td class="fw-medium">${c.name}</td>
+                <td class="text-center">${hasPhoto ? '✅' : '❌'}</td>
+                <td class="text-center">${hasSign ? '✅' : '❌'}</td>
+                <td class="text-center">${hasThumb ? '✅' : '❌'}</td>
+                <td class="${statusClass}">${c.status}</td>
+            </tr>`;
+        });
+        tbody.innerHTML = html;
+        document.getElementById('batch-progress-text').innerText = `0 of ${cands.length} candidates processed`;
+    }
+    
+    async function processBatchImage(file, configId) {
+        const c = configs.find(x => x.id === configId);
+        const fd = new FormData();
+        fd.append('image', file);
+        fd.append('documentType', configId === 'document' ? 'consent_form' : configId);
+
+        if (Number.isFinite(c.defaults.width)) {
+            fd.append('width', c.defaults.width);
+        }
+        if (Number.isFinite(c.defaults.height)) {
+            fd.append('height', c.defaults.height);
+        }
+
+        const targetKb = Number.isFinite(c.defaults.targetKb)
+            ? c.defaults.targetKb
+            : Number(c.defaults.maxSize ?? 45);
+        const thresholdKb = configId === 'document'
+            ? targetKb
+            : Math.max(1, (Number.isFinite(c.defaults.maxSize) ? c.defaults.maxSize : targetKb) + 5);
+        const idealKb = configId === 'document'
+            ? Math.max(1, targetKb - 1)
+            : Math.max(1, (Number.isFinite(c.defaults.maxSize) ? c.defaults.maxSize : targetKb) - 1);
+
+        fd.append('targetSize', targetKb);
+        fd.append('threshold', thresholdKb);
+        fd.append('ideal', idealKb);
+
+        if (Number.isFinite(c.defaults.dpi)) {
+            fd.append('dpi', c.defaults.dpi);
+        }
+        if (c.defaults.algo) {
+            fd.append('resizeAlgorithm', c.defaults.algo);
+        }
+
+        const res = await fetch(API_URL, { method: 'POST', body: fd });
+        if (!res.ok) {
+            let body = '';
+            try {
+                body = await res.text();
+                body = body.replace(/\s+/g, ' ').trim().slice(0, 256);
+            } catch (e) {
+                body = '';
+            }
+            const statusDetail = res.status ? `${res.status}${res.statusText ? ' ' + res.statusText : ''}` : 'Unknown status';
+            throw new Error(`API Error — ${statusDetail}${body ? ` — ${body}` : ''}`);
+        }
+        const status = res.headers.get('X-Compression-Status');
+        if (status === 'below_minimum') throw new Error('File size below minimum');
+        if (status === 'exceeds_maximum') throw new Error('File size exceeds maximum');
+        return await res.blob();
+    }
+    
+    async function startBatchProcessing() {
+        const cands = Object.values(batchCandidates);
+        if(cands.length === 0) return;
+        
+        batchCancel = false;
+        document.getElementById('btn-start-batch').classList.add('d-none');
+        document.getElementById('btn-cancel-batch').classList.remove('d-none');
+        document.getElementById('btn-cancel-batch').innerText = "🛑 Cancel";
+        document.getElementById('btn-dl-batch-zip').classList.add('d-none');
+        
+        let completed = 0;
+        
+        for (let i = 0; i < cands.length; i++) {
+            if(batchCancel) break;
+            
+            const c = cands[i];
+            if(c.status.includes('Completed')) {
+                completed++;
+                continue;
+            }
+            
+            c.status = 'Processing...';
+            renderBatchTable();
+            
+            try {
+                if (c.files.photo && !c.processed.photo) c.processed.photo = await processBatchImage(c.files.photo, 'person-photo');
+                if (c.files.sign && !c.processed.sign) c.processed.sign = await processBatchImage(c.files.sign, 'signature');
+                if (c.files.thumb && !c.processed.thumb) c.processed.thumb = await processBatchImage(c.files.thumb, 'thumb-impression');
+                
+                if (!c.files.photo || !c.files.sign || !c.files.thumb) {
+                    c.status = 'Completed (Missing Files)';
+                } else {
+                    c.status = 'Completed';
+                }
+            } catch (err) {
+                c.status = 'Failed';
+            }
+            
+            completed++;
+            const pct = Math.round((completed / cands.length) * 100);
+            document.getElementById('batch-progress-bar').style.width = `${pct}%`;
+            document.getElementById('batch-progress-text').innerText = `${completed} of ${cands.length} candidates processed`;
+            renderBatchTable();
+        }
+        
+        document.getElementById('btn-cancel-batch').classList.add('d-none');
+        document.getElementById('btn-dl-batch-zip').classList.remove('d-none');
+        document.getElementById('batch-progress-bar').classList.add('bg-success');
+    }
+    
+    function cancelBatchProcessing() {
+        batchCancel = true;
+        document.getElementById('btn-cancel-batch').innerText = "Cancelling...";
+    }
+    
+    async function downloadBatchZip() {
+        const btn = document.getElementById('btn-dl-batch-zip');
+        btn.disabled = true;
+        btn.innerText = "Creating Master ZIP...";
+        
+        const zip = new JSZip();
+        
+        Object.values(batchCandidates).forEach(c => {
+            if(Object.keys(c.processed).length > 0) {
+                const folder = zip.folder(c.name);
+                if(c.processed.photo) folder.file(`${c.name}_Photo.jpg`, c.processed.photo);
+                if(c.processed.sign) folder.file(`${c.name}_Signature.jpg`, c.processed.sign);
+                if(c.processed.thumb) folder.file(`${c.name}_Thumb.jpg`, c.processed.thumb);
+            }
+        });
+        
+        const content = await zip.generateAsync({ type: "blob" });
+        const url = URL.createObjectURL(content);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "Processed_Candidates.zip";
+        a.click();
+        
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        btn.disabled = false;
+        btn.innerHTML = "📦 Download Processed_Candidates.zip";
+    }
+</script>
+{% endblock %}

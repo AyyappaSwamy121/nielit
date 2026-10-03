@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Advanced Search | {{ platform_settings.portal_name|default:'Enterprise Portal' }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Advanced Application Search</h1>
+</div>
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="GET" action="{% url 'advanced_search' %}">
+            <div class="row g-3">
+                
+                <!-- Text Search (Partial) -->
+                <div class="col-md-12">
+                    <label class="form-label fw-bold">Search Query</label>
+                    <input type="text" name="q" class="form-control" placeholder="Search by Application ID, Name, Aadhaar, Mobile, Email, etc." value="{{ request.GET.q }}">
+                    <div class="form-text">Supports partial text search across multiple fields.</div>
+                </div>
+
+                <!-- Exact Match Dropdowns -->
+                <div class="col-md-3">
+                    <label class="form-label">State</label>
+                    <select name="state" class="form-select">
+                        <option value="">All States</option>
+                        <!-- Options populated dynamically from master data -->
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">District</label>
+                    <select name="district" class="form-select">
+                        <option value="">All Districts</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Program</label>
+                    <select name="program" class="form-select">
+                        <option value="">All Programs</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="">All Statuses</option>
+                    </select>
+                </div>
+
+                <!-- Date Range -->
+                <div class="col-md-4">
+                    <label class="form-label">Submission Date (From)</label>
+                    <input type="date" name="start_date" class="form-control" value="{{ request.GET.start_date }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Submission Date (To)</label>
+                    <input type="date" name="end_date" class="form-control" value="{{ request.GET.end_date }}">
+                </div>
+
+                <!-- Actions -->
+                <div class="col-md-4 d-flex align-items-end justify-content-end gap-2">
+                    <a href="{% url 'advanced_search' %}" class="btn btn-outline-secondary">Clear Filters</a>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="material-icons-round align-middle fs-6">search</span> Search
+                    </button>
+                    <!-- Future saved filters can be triggered here via JS -->
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Results Table -->
+<div class="card shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Search Results <span class="badge bg-primary rounded-pill">{{ results.count }}</span></h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>App Number</th>
+                        <th>Student Name</th>
+                        <th>Aadhaar</th>
+                        <th>Program</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in results %}
+                    <tr>
+                        <td>{{ app.application_number }}</td>
+                        <td>{{ app.full_name }}</td>
+                        <td>{{ app.aadhaar_number }}</td>
+                        <td>{{ app.program_opting.name|default:"-" }}</td>
+                        <td>
+                            <span class="badge {% if app.status.code == 'PENDING' %}bg-warning text-dark{% elif app.status.code == 'INCOMPLETE' %}bg-info text-dark{% elif app.status.code == 'CORRECTION' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                {{ app.status.name }}
+                            </span>
+                        </td>
+                        <td>{{ app.submission_date|date:"Y-m-d" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">No applications found matching your criteria.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,547 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Export Center | Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card { border: 0; border-radius: 0.75rem; }
+    .stat-card .stat-icon { width: 46px; height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; }
+    .export-tab-card { cursor: pointer; transition: transform .12s ease, box-shadow .12s ease; }
+    .export-tab-card:hover { transform: translateY(-2px); box-shadow: 0 .4rem 1rem rgba(0,0,0,.08); }
+    .export-tab-card.active { border-color: #0d6efd; background: rgba(13,110,253,.06); box-shadow: 0 .4rem 1rem rgba(13,110,253,.12); }
+    .export-panel { display: none; }
+    .export-panel.active { display: block; }
+    .job-badge { font-size: .72rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><span class="material-icons-round align-middle me-2 text-secondary" style="font-size: 1.8rem;">file_download</span>Export Center</h1>
+</div>
+
+<!-- Dashboard Statistics (live from ExportJob) -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-2">
+        <div class="card stat-card shadow-sm">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon bg-primary-subtle text-primary"><span class="material-icons-round">download</span></div>
+                <div><div class="fs-4 fw-bold">{{ stats.total }}</div><div class="text-muted small">Total Exports</div></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card stat-card shadow-sm">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon bg-info-subtle text-info"><span class="material-icons-round">today</span></div>
+                <div><div class="fs-4 fw-bold">{{ stats.today }}</div><div class="text-muted small">Exports Today</div></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card stat-card shadow-sm">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon bg-success-subtle text-success"><span class="material-icons-round">check_circle</span></div>
+                <div><div class="fs-4 fw-bold">{{ stats.completed }}</div><div class="text-muted small">Completed</div></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card stat-card shadow-sm">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon bg-danger-subtle text-danger"><span class="material-icons-round">error</span></div>
+                <div><div class="fs-4 fw-bold">{{ stats.failed }}</div><div class="text-muted small">Failed</div></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-2">
+        <div class="card stat-card shadow-sm">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="stat-icon bg-warning-subtle text-warning"><span class="material-icons-round">hourglass_top</span></div>
+                <div><div class="fs-4 fw-bold">{{ stats.processing }}</div><div class="text-muted small">Processing</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+    <span class="material-icons-round align-middle me-2" style="font-size: 1.1rem;">info</span>{{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Export Type Cards -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white fw-bold"><span class="material-icons-round align-middle me-1 text-secondary">category</span>Select Export Type</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="card export-tab-card active h-100" data-panel="panel-applications">
+                    <div class="card-body text-center py-3">
+                        <span class="material-icons-round text-primary" style="font-size: 2rem;">description</span>
+                        <div class="fw-bold mt-2">Student Applications</div>
+                        <div class="text-muted small">Export filtered applications</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="card export-tab-card h-100" data-panel="panel-students">
+                    <div class="card-body text-center py-3">
+                        <span class="material-icons-round text-success" style="font-size: 2rem;">group</span>
+                        <div class="fw-bold mt-2">Student Directory</div>
+                        <div class="text-muted small">Export student information</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="card export-tab-card h-100" data-panel="panel-documents">
+                    <div class="card-body text-center py-3">
+                        <span class="material-icons-round text-info" style="font-size: 2rem;">folder_zip</span>
+                        <div class="fw-bold mt-2">Documents</div>
+                        <div class="text-muted small">Download student documents</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="card export-tab-card h-100" data-panel="panel-reports">
+                    <div class="card-body text-center py-3">
+                        <span class="material-icons-round text-warning" style="font-size: 2rem;">query_stats</span>
+                        <div class="fw-bold mt-2">Application Reports</div>
+                        <div class="text-muted small">Daily summary exports</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="card export-tab-card h-100" data-panel="panel-master-data">
+                    <div class="card-body text-center py-3">
+                        <span class="material-icons-round text-secondary" style="font-size: 2rem;">dataset</span>
+                        <div class="fw-bold mt-2">Master Data</div>
+                        <div class="text-muted small">Export system master data</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-md-4 col-lg-2">
+                <div class="card export-tab-card h-100" data-panel="panel-audit-logs">
+                    <div class="card-body text-center py-3">
+                        <span class="material-icons-round text-danger" style="font-size: 2rem;">receipt_long</span>
+                        <div class="fw-bold mt-2">Audit Logs</div>
+                        <div class="text-muted small">Export administrative activity</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Shared application filter form (used by applications / students / documents / reports) -->
+<form method="POST" action="{% url 'export_center_generate' %}" id="exportForm">
+    {% csrf_token %}
+    <input type="hidden" name="export_type" id="exportTypeInput" value="applications">
+    <input type="hidden" name="format" id="formatInput" value="csv">
+
+    <div id="panel-applications" class="export-panel active">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white fw-bold"><span class="material-icons-round align-middle me-1 text-primary">description</span>Export Applications</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Search</label>
+                        <input type="text" name="search" class="form-control" value="{{ f.search }}" placeholder="App No / Name / Mobile / Email / Aadhaar">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Application Number</label>
+                        <input type="text" name="application_number" class="form-control" value="{{ f.application_number }}" placeholder="e.g. CSC202600001">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Name</label>
+                        <input type="text" name="name" class="form-control" value="{{ f.name }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Mobile</label>
+                        <input type="text" name="mobile" class="form-control" value="{{ f.mobile }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Email</label>
+                        <input type="text" name="email" class="form-control" value="{{ f.email }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Aadhaar</label>
+                        <input type="text" name="aadhaar" class="form-control" value="{{ f.aadhaar }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Application Status</label>
+                        <select name="status" class="form-select">
+                            <option value="">All</option>
+                            <option value="submitted" {% if f.status == 'submitted' %}selected{% endif %}>Submitted</option>
+                            <option value="draft" {% if f.status == 'draft' %}selected{% endif %}>Draft</option>
+                            <option value="pending" {% if f.status == 'pending' %}selected{% endif %}>Pending Review</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Program</label>
+                        <select name="program" class="form-select">
+                            <option value="">All</option>
+                            {% for p in programs %}<option value="{{ p.id }}" {% if f.program == p.id|stringformat:"s" %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Qualification</label>
+                        <select name="qualification" class="form-select">
+                            <option value="">All</option>
+                            {% for q in qualifications %}<option value="{{ q.id }}" {% if f.qualification == q.id|stringformat:"s" %}selected{% endif %}>{{ q.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Training Partner</label>
+                        <select name="training_partner" class="form-select">
+                            <option value="">All</option>
+                            {% for tp in training_partners %}<option value="{{ tp.id }}" {% if f.training_partner == tp.id|stringformat:"s" %}selected{% endif %}>{{ tp.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Batch Code</label>
+                        <select name="batch_code" class="form-select">
+                            <option value="">All</option>
+                            {% for bc in batch_codes %}<option value="{{ bc.code }}" {% if f.batch_code == bc.code %}selected{% endif %}>{{ bc.code }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">State</label>
+                        <select name="state" class="form-select">
+                            <option value="">All</option>
+                            {% for s in states %}<option value="{{ s.id }}" {% if f.state == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">District</label>
+                        <select name="district" class="form-select">
+                            <option value="">All</option>
+                            {% for d in districts %}<option value="{{ d.id }}" {% if f.district == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Submission Date — From</label>
+                        <input type="date" name="date_from" class="form-control" value="{{ f.date_from }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Submission Date — To</label>
+                        <input type="date" name="date_to" class="form-control" value="{{ f.date_to }}">
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-3">
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" name="include_documents" id="includeDocumentsChk">
+                            <label class="form-check-label" for="includeDocumentsChk">Include documents (ZIP only)</label>
+                        </div>
+                    </div>
+                    <div class="col-md-9 d-flex flex-wrap gap-2 justify-content-md-end">
+                        <button type="button" class="btn btn-outline-success export-btn" data-format="csv"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">grid_on</span>Export CSV</button>
+                        <button type="button" class="btn btn-outline-success export-btn" data-format="xlsx"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">table_chart</span>Export Excel</button>
+                        <button type="button" class="btn btn-outline-danger export-btn" data-format="pdf"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">picture_as_pdf</span>Export PDF</button>
+                        <button type="button" class="btn btn-outline-info export-btn" data-format="zip"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">folder_zip</span>Download ZIP</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-students" class="export-panel">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white fw-bold"><span class="material-icons-round align-middle me-1 text-success">group</span>Export Student Directory</div>
+            <div class="card-body">
+                <p class="text-muted small">Uses the same filters above. Exports compact student directory columns (Application No, Name, Contact, Education, Status).</p>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Search</label>
+                        <input type="text" name="search" class="form-control" value="{{ f.search }}" placeholder="App No / Name / Mobile / Email / Aadhaar">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Application Status</label>
+                        <select name="status" class="form-select">
+                            <option value="">All</option>
+                            <option value="submitted" {% if f.status == 'submitted' %}selected{% endif %}>Submitted</option>
+                            <option value="draft" {% if f.status == 'draft' %}selected{% endif %}>Draft</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Training Partner</label>
+                        <select name="training_partner" class="form-select">
+                            <option value="">All</option>
+                            {% for tp in training_partners %}<option value="{{ tp.id }}" {% if f.training_partner == tp.id|stringformat:"s" %}selected{% endif %}>{{ tp.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">State</label>
+                        <select name="state" class="form-select">
+                            <option value="">All</option>
+                            {% for s in states %}<option value="{{ s.id }}" {% if f.state == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Submission Date — From</label>
+                        <input type="date" name="date_from" class="form-control" value="{{ f.date_from }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Submission Date — To</label>
+                        <input type="date" name="date_to" class="form-control" value="{{ f.date_to }}">
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2 justify-content-md-end mt-3">
+                    <button type="button" class="btn btn-outline-success export-btn" data-format="csv"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">grid_on</span>Export CSV</button>
+                    <button type="button" class="btn btn-outline-success export-btn" data-format="xlsx"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">table_chart</span>Export Excel</button>
+                    <button type="button" class="btn btn-outline-danger export-btn" data-format="pdf"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">picture_as_pdf</span>Export PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-documents" class="export-panel">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white fw-bold"><span class="material-icons-round align-middle me-1 text-info">folder_zip</span>Export Documents (ZIP)</div>
+            <div class="card-body">
+                <p class="text-muted small">Select document types and use the filters above to scope which applications' documents are included. Missing documents are skipped automatically.</p>
+                <div class="row g-3 mb-3">
+                    {% for dt in document_types %}
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="document_types" value="{{ dt.0 }}" id="doc_{{ dt.0 }}" checked>
+                            <label class="form-check-label" for="doc_{{ dt.0 }}">{{ dt.1 }}</label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+                    <button type="button" class="btn btn-outline-info export-btn" data-format="zip"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">folder_zip</span>Download Documents ZIP</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-reports" class="export-panel">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white fw-bold"><span class="material-icons-round align-middle me-1 text-warning">query_stats</span>Export Application Reports</div>
+            <div class="card-body">
+                <p class="text-muted small">Daily application summary (Total / Submitted / Draft / Pending Review) grouped by submission date, honoring the filters above.</p>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Submission Date — From</label>
+                        <input type="date" name="date_from" class="form-control" value="{{ f.date_from }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Submission Date — To</label>
+                        <input type="date" name="date_to" class="form-control" value="{{ f.date_to }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Application Status</label>
+                        <select name="status" class="form-select">
+                            <option value="">All</option>
+                            <option value="submitted" {% if f.status == 'submitted' %}selected{% endif %}>Submitted</option>
+                            <option value="draft" {% if f.status == 'draft' %}selected{% endif %}>Draft</option>
+                            <option value="pending" {% if f.status == 'pending' %}selected{% endif %}>Pending Review</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2 justify-content-md-end mt-3">
+                    <button type="button" class="btn btn-outline-success export-btn" data-format="csv"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">grid_on</span>Export CSV</button>
+                    <button type="button" class="btn btn-outline-success export-btn" data-format="xlsx"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">table_chart</span>Export Excel</button>
+                    <button type="button" class="btn btn-outline-danger export-btn" data-format="pdf"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">picture_as_pdf</span>Export PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-master-data" class="export-panel">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white fw-bold"><span class="material-icons-round align-middle me-1 text-secondary">dataset</span>Export Master Data</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Data Type</label>
+                        <select name="master_data_key" class="form-select">
+                            {% for md in master_data_models %}
+                            <option value="{{ md.key }}">{{ md.label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="format" id="mdCsv" value="csv" checked>
+                                <label class="form-check-label" for="mdCsv">CSV</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="format" id="mdXlsx" value="xlsx">
+                                <label class="form-check-label" for="mdXlsx">Excel</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-md-end mt-3">
+                    <button type="button" class="btn btn-outline-primary export-btn-master"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">file_download</span>Export</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="panel-audit-logs" class="export-panel">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white fw-bold"><span class="material-icons-round align-middle me-1 text-danger">receipt_long</span>Export Audit Logs</div>
+            <div class="card-body">
+                <p class="text-muted small">Exports the full audit trail (user, action, detail, application IDs, timestamp).</p>
+                <div class="d-flex flex-wrap gap-2 justify-content-md-end">
+                    <button type="button" class="btn btn-outline-success export-btn" data-format="csv"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">grid_on</span>Export CSV</button>
+                    <button type="button" class="btn btn-outline-success export-btn" data-format="xlsx"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">table_chart</span>Export Excel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Export History -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white fw-bold d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <span><span class="material-icons-round align-middle me-1 text-secondary">history</span>Export History</span>
+        <form method="GET" class="d-flex gap-2" action="{% url 'export_center' %}">
+            <input type="text" name="history_search" class="form-control form-control-sm" value="{{ history_search }}" placeholder="Search type / format / user / status...">
+            <button type="submit" class="btn btn-sm btn-outline-secondary"><span class="material-icons-round align-middle" style="font-size: 1rem;">search</span></button>
+        </form>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Export ID</th>
+                        <th>Type</th>
+                        <th>Format</th>
+                        <th class="text-end">Records</th>
+                        <th>Created By</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in history_page %}
+                    <tr>
+                        <td class="fw-bold">{{ job.display_id }}</td>
+                        <td>{{ job.export_type_label }}</td>
+                        <td><span class="badge bg-secondary job-badge">{{ job.format_label }}</span></td>
+                        <td class="text-end">{{ job.record_count }}</td>
+                        <td>{{ job.requested_by.username|default:"-" }}</td>
+                        <td class="small cell-nowrap">{{ job.created_at|date:"d M Y H:i" }}</td>
+                        <td>
+                            {% if job.status == 'completed' %}
+                            <span class="badge bg-success job-badge">Completed</span>
+                            {% elif job.status == 'failed' %}
+                            <span class="badge bg-danger job-badge" title="{{ job.error_message }}">Failed</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark job-badge">Processing</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if job.status == 'completed' and not job.is_expired and job.file %}
+                            <a href="{% url 'export_center_download' job.pk %}" class="btn btn-sm btn-outline-primary"><span class="material-icons-round align-middle" style="font-size: 1rem;">download</span>Download</a>
+                            {% else %}
+                            <span class="text-muted small">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="8" class="text-center py-4 text-muted">No exports yet. Generate one above.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if history_page.has_other_pages %}
+    <div class="card-footer bg-white">
+        <nav aria-label="Export history pagination">
+            <ul class="pagination justify-content-center mb-0">
+                {% if history_page.has_previous %}
+                <li class="page-item"><a class="page-link" href="?history_page={{ history_page.previous_page_number }}{% if history_search %}&history_search={{ history_search }}{% endif %}">Previous</a></li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+                {% endif %}
+                <li class="page-item active"><span class="page-link">Page {{ history_page.number }} of {{ history_page.paginator.num_pages }}</span></li>
+                {% if history_page.has_next %}
+                <li class="page-item"><a class="page-link" href="?history_page={{ history_page.next_page_number }}{% if history_search %}&history_search={{ history_search }}{% endif %}">Next</a></li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+    var form = document.getElementById('exportForm');
+    var typeInput = document.getElementById('exportTypeInput');
+    var formatInput = document.getElementById('formatInput');
+
+    function setType(type) {
+        typeInput.value = type.replace('-', '_');
+        document.querySelectorAll('.export-panel').forEach(function (p) {
+            p.classList.remove('active');
+            // Disable inputs in hidden panels so only the active panel's filters submit.
+            p.querySelectorAll('input, select, textarea').forEach(function (el) { el.disabled = true; });
+        });
+        document.querySelectorAll('.export-tab-card').forEach(function (c) { c.classList.remove('active'); });
+        var panel = document.getElementById('panel-' + type);
+        if (panel) {
+            panel.classList.add('active');
+            panel.querySelectorAll('input, select, textarea').forEach(function (el) { el.disabled = false; });
+        }
+        var card = document.querySelector('.export-tab-card[data-panel="panel-' + type + '"]');
+        if (card) card.classList.add('active');
+    }
+    document.querySelectorAll('.export-tab-card').forEach(function (card) {
+        card.addEventListener('click', function () { setType(card.getAttribute('data-panel').replace('panel-', '')); });
+    });
+
+    // Standard export buttons
+    document.querySelectorAll('.export-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var fmt = btn.getAttribute('data-format');
+            formatInput.value = fmt;
+            // Audit logs / master data use their own panel type already.
+            var type = typeInput.value;
+            var btnEl = btn;
+            var original = btnEl.innerHTML;
+            btnEl.disabled = true;
+            btnEl.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Generating...';
+            form.submit();
+            setTimeout(function () {
+                btnEl.disabled = false;
+                btnEl.innerHTML = original;
+            }, 3000);
+        });
+    });
+
+    // Master data export button uses the radio format
+    var masterBtn = document.querySelector('.export-btn-master');
+    if (masterBtn) {
+        masterBtn.addEventListener('click', function () {
+            formatInput.value = document.querySelector('input[name="format"]:checked').value;
+            masterBtn.disabled = true;
+            masterBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Generating...';
+            form.submit();
+            setTimeout(function () { masterBtn.disabled = false; masterBtn.innerHTML = '<span class="material-icons-round align-middle me-1" style="font-size: 1rem;">file_download</span>Export'; }, 3000);
+        });
+    }
+
+    setType('applications');
+})();
+</script>
+{% endblock %}

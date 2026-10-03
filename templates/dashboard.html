@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Smart Dashboard | {{ platform_settings.portal_name|default:'Enterprise Portal' }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Smart Analytics Dashboard</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button id="downloadPdfBtn" class="btn btn-sm btn-outline-danger">
+                <span class="material-icons-round align-middle fs-6">picture_as_pdf</span> Download PDF
+            </button>
+            <a href="{% url 'export_excel' %}" class="btn btn-sm btn-outline-success">
+                <span class="material-icons-round align-middle fs-6">table_view</span> Export Excel
+            </a>
+            <a href="{% url 'export_zip' %}" class="btn btn-sm btn-outline-primary">
+                <span class="material-icons-round align-middle fs-6">folder_zip</span> Export ZIP
+            </a>
+        </div>
+    </div>
+</div>
+
+<div id="dashboardContent">
+    <!-- Live Counters -->
+    <div class="row row-cols-1 row-cols-md-4 g-4 mb-4">
+        <div class="col">
+            <div class="card bg-primary text-white shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-uppercase fw-semibold">Total Apps</h6>
+                    <h2 class="display-6 fw-bold mb-0">{{ total_apps }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card bg-info text-dark shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-uppercase fw-semibold">Today</h6>
+                    <h2 class="display-6 fw-bold mb-0">{{ today_apps }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card bg-warning text-dark shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-uppercase fw-semibold">Pending</h6>
+                    <h2 class="display-6 fw-bold mb-0">{{ pending }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card bg-success text-white shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="card-title text-uppercase fw-semibold">Correction</h6>
+                    <h2 class="display-6 fw-bold mb-0">{{ correction }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration Trends -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white"><h5 class="card-title mb-0">Daily Registrations</h5></div>
+                <div class="card-body"><canvas id="dailyChart"></canvas></div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white"><h5 class="card-title mb-0">Monthly Registrations</h5></div>
+                <div class="card-body"><canvas id="monthlyChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demographics -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white"><h5 class="card-title mb-0">Gender Breakdown</h5></div>
+                <div class="card-body"><canvas id="genderChart"></canvas></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white"><h5 class="card-title mb-0">Community Stats</h5></div>
+                <div class="card-body"><canvas id="communityChart"></canvas></div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white"><h5 class="card-title mb-0">Program Distribution</h5></div>
+                <div class="card-body"><canvas id="programChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Geographical -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white"><h5 class="card-title mb-0">State-wise Analytics</h5></div>
+                <div class="card-body"><canvas id="stateChart"></canvas></div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white"><h5 class="card-title mb-0">District-wise Analytics</h5></div>
+                <div class="card-body"><canvas id="districtChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- html2pdf for downloading the dashboard as PDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Data passed from Django Views
+    const dailyData = {{ daily_trend_json|safe|default:"[]" }};
+    const monthlyData = {{ monthly_trend_json|safe|default:"[]" }};
+    const genderData = {{ gender_data_json|safe|default:"[]" }};
+    const communityData = {{ community_data_json|safe|default:"[]" }};
+    const programData = {{ program_data_json|safe|default:"[]" }};
+    const stateData = {{ state_data_json|safe|default:"[]" }};
+    const districtData = {{ district_data_json|safe|default:"[]" }};
+</script>
+<script src="{% static 'js/dashboard.js' %}"></script>
+{% endblock %}

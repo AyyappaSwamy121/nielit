@@ -1,0 +1,792 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Pending Applications | Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sel-col { width: 50px; min-width: 50px; text-align: center; }
+    .sel-col input { cursor: pointer; }
+    tr.row-selected td { background-color: rgba(13, 110, 253, 0.08) !important; }
+    .bulk-toolbar {
+        position: sticky;
+        top: 66px;
+        z-index: 1020;
+        background-color: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.05);
+    }
+    @media (max-width: 767.98px) {
+        .bulk-toolbar { top: 60px; }
+    }
+    .photo-thumb {
+        width: 60px;
+        height: 70px;
+        object-fit: cover;
+        border-radius: 0.375rem;
+        border: 1px solid #dee2e6;
+        background: #f8f9fa;
+    }
+    .summary-icon {
+        width: 44px;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.75rem;
+        position: relative;
+        overflow: hidden;
+    }
+    /* Material icon renders above the SVG fallback; if the font fails to load
+       the empty span shows nothing and the inline SVG below stays visible. */
+    .summary-icon .material-icons-round {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+        font-size: 1.4rem;
+    }
+    .summary-icon .icon-fallback {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 22px;
+        height: 22px;
+        margin: auto;
+        z-index: 1;
+    }
+
+    /* ===== Readable, horizontally-scrollable applications table ===== */
+    .applications-table-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        overflow-y: visible;
+        -webkit-overflow-scrolling: touch;
+    }
+    .applications-table {
+        width: max-content;
+        min-width: 100%;
+        border-collapse: collapse;
+    }
+    .applications-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        white-space: nowrap;
+    }
+    .applications-table tbody td {
+        height: auto;
+        min-height: 80px;
+        vertical-align: middle;
+        white-space: normal;
+        word-break: normal;
+        overflow-wrap: break-word;
+    }
+    /* Identifiers stay on one line */
+    .applications-table .cell-nowrap {
+        white-space: nowrap;
+    }
+    /* Email wraps only when truly necessary */
+    .applications-table .cell-email {
+        overflow-wrap: anywhere;
+        word-break: normal;
+    }
+    /* Fixed column widths (table scrolls horizontally, columns never crush) */
+    .applications-table .col-appno { min-width: 150px; }
+    .applications-table .col-photo { width: 90px; min-width: 90px; }
+    .applications-table .col-name { min-width: 180px; }
+    .applications-table .col-father { min-width: 180px; }
+    .applications-table .col-mobile { min-width: 130px; }
+    .applications-table .col-email { min-width: 220px; }
+    .applications-table .col-aadhaar { min-width: 150px; }
+    .applications-table .col-program { min-width: 220px; }
+    .applications-table .col-qual { min-width: 250px; }
+    .applications-table .col-inst { min-width: 220px; }
+    .applications-table .col-state { min-width: 150px; }
+    .applications-table .col-district { min-width: 150px; }
+    .applications-table .col-date { min-width: 130px; }
+    .applications-table .col-verif { min-width: 160px; }
+    .applications-table .col-appstatus { min-width: 180px; }
+    .applications-table .col-actions { width: 130px; min-width: 130px; }
+    /* Status badges never break across lines */
+    .applications-table .status-badge {
+        white-space: nowrap;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Pending Applications</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'application_pending' %}{% if query_string %}?{{ query_string }}{% endif %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </a>
+    </div>
+</div>
+
+<!-- Pending Count Summary -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="summary-icon bg-warning-subtle text-warning">
+                    <svg class="icon-fallback" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+                        <path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6z"/>
+                    </svg>
+                    <span class="material-icons-round align-middle">hourglass_empty</span>
+                </div>
+                <div>
+                    <div class="text-muted small text-uppercase">Total Pending</div>
+                    <div class="fs-3 fw-bold text-dark">{{ total_pending }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="summary-icon bg-info-subtle text-info">
+                    <svg class="icon-fallback" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+                        <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7v-5z"/>
+                    </svg>
+                    <span class="material-icons-round align-middle">today</span>
+                </div>
+                <div>
+                    <div class="text-muted small text-uppercase">Pending Today</div>
+                    <div class="fs-3 fw-bold text-dark">{{ pending_today }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="summary-icon bg-success-subtle text-success">
+                    <svg class="icon-fallback" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+                        <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
+                    </svg>
+                    <span class="material-icons-round align-middle">date_range</span>
+                </div>
+                <div>
+                    <div class="text-muted small text-uppercase">Pending This Week</div>
+                    <div class="fs-3 fw-bold text-dark">{{ pending_week }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="summary-icon bg-secondary-subtle text-secondary">
+                    <svg class="icon-fallback" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+                        <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+                    </svg>
+                    <span class="material-icons-round align-middle">history</span>
+                </div>
+                <div>
+                    <div class="text-muted small text-uppercase">Oldest Pending</div>
+                    <div class="fs-6 fw-bold text-dark">{{ oldest_pending.submission_date|date:"M d, Y"|default:"—" }}</div>
+                    {% if oldest_pending %}
+                    <div class="small text-muted text-truncate" style="max-width: 130px;">{{ oldest_pending.application_number }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search and Filter Form -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{% url 'application_pending' %}">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" value="{{ current_search }}" placeholder="Search App No, Name, Aadhaar, Mobile, Email...">
+                </div>
+                <div class="col-md-2">
+                    <label for="application_status" class="form-label">Application Status</label>
+                    <select id="application_status" name="application_status" class="form-select">
+                        <option value="PENDING" {% if current_application_status == 'PENDING' %}selected{% endif %}>Pending Review</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="verification_status" class="form-label">Verification Status</label>
+                    <select id="verification_status" name="verification_status" class="form-select">
+                        <option value="">All</option>
+                        <option value="PENDING" {% if current_verification_status == 'PENDING' %}selected{% endif %}>Pending</option>
+                        <option value="VERIFIED" {% if current_verification_status == 'VERIFIED' %}selected{% endif %}>Verified</option>
+                        <option value="CORRECTION" {% if current_verification_status == 'CORRECTION' %}selected{% endif %}>Need Correction</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="date_range" class="form-label">Submission Date</label>
+                    <div class="d-flex gap-2">
+                        <select id="date_range" name="date_range" class="form-select">
+                            <option value="">All Dates</option>
+                            <option value="today" {% if current_date_range == 'today' %}selected{% endif %}>Today</option>
+                            <option value="yesterday" {% if current_date_range == 'yesterday' %}selected{% endif %}>Yesterday</option>
+                            <option value="this_week" {% if current_date_range == 'this_week' %}selected{% endif %}>This Week</option>
+                            <option value="this_month" {% if current_date_range == 'this_month' %}selected{% endif %}>This Month</option>
+                            <option value="last7" {% if current_date_range == 'last7' %}selected{% endif %}>Last 7 Days</option>
+                            <option value="last30" {% if current_date_range == 'last30' %}selected{% endif %}>Last 30 Days</option>
+                            <option value="custom" {% if current_date_range == 'custom' %}selected{% endif %}>Custom Date Range</option>
+                        </select>
+                    </div>
+                    <div id="customDateRange" class="d-flex gap-2 mt-2 {% if current_date_range != 'custom' %}d-none{% endif %}">
+                        <input type="date" class="form-control form-control-sm" id="date_from" name="date_from" value="{{ current_date_from }}">
+                        <span class="align-self-center text-muted">to</span>
+                        <input type="date" class="form-control form-control-sm" id="date_to" name="date_to" value="{{ current_date_to }}">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label for="sort" class="form-label">Sort By</label>
+                    <select id="sort" name="sort" class="form-select">
+                        <option value="oldest" {% if current_sort == 'oldest' %}selected{% endif %}>Oldest submission first</option>
+                        <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>Newest submission first</option>
+                        <option value="name_asc" {% if current_sort == 'name_asc' %}selected{% endif %}>Name A–Z</option>
+                        <option value="name_desc" {% if current_sort == 'name_desc' %}selected{% endif %}>Name Z–A</option>
+                        <option value="app_no_asc" {% if current_sort == 'app_no_asc' %}selected{% endif %}>Application No A–Z</option>
+                        <option value="app_no_desc" {% if current_sort == 'app_no_desc' %}selected{% endif %}>Application No Z–A</option>
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="state" class="form-label">State</label>
+                    <select id="state" name="state" class="form-select">
+                        <option value="">All States</option>
+                        {% for state in states %}
+                        <option value="{{ state.id }}" {% if current_state == state.id|stringformat:"s" %}selected{% endif %}>{{ state.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="district" class="form-label">District</label>
+                    <select id="district" name="district" class="form-select">
+                        <option value="">All Districts</option>
+                        {% for d in districts %}
+                        <option value="{{ d.id }}" data-state="{{ d.state_id }}" {% if current_district == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="program" class="form-label">Program</label>
+                    <select id="program" name="program" class="form-select">
+                        <option value="">All Programs</option>
+                        {% for prog in programs %}
+                        <option value="{{ prog.id }}" {% if current_program == prog.id|stringformat:"s" %}selected{% endif %}>{{ prog.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="qualification" class="form-label">Qualification</label>
+                    <select id="qualification" name="qualification" class="form-select">
+                        <option value="">All Qualifications</option>
+                        {% for q in qualifications %}
+                        <option value="{{ q.id }}" {% if current_qualification == q.id|stringformat:"s" %}selected{% endif %}>{{ q.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="training_partner" class="form-label">Training Partner</label>
+                    <select id="training_partner" name="training_partner" class="form-select">
+                        <option value="">All Training Partners</option>
+                        {% for tp in training_partners %}
+                        <option value="{{ tp.id }}" {% if current_training_partner == tp.id|stringformat:"s" %}selected{% endif %}>{{ tp.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <label for="gender" class="form-label">Gender</label>
+                    <select id="gender" name="gender" class="form-select">
+                        <option value="">All Genders</option>
+                        {% for value, label in genders %}
+                        <option value="{{ value }}" {% if current_gender == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-12 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel me-1"></i>Filter</button>
+                    <a href="{% url 'application_pending' %}" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i>Clear Filters</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Active Filter Summary -->
+{% if filters_active %}
+<div class="card border-primary-subtle bg-primary-subtle bg-opacity-10 mb-3">
+    <div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
+        <span class="fw-bold"><i class="bi bi-funnel-fill me-1"></i>Active Filters:</span>
+        {% if current_search %}<span class="badge bg-primary">Search: {{ current_search }}</span>{% endif %}
+        {% if current_verification_status %}<span class="badge bg-primary">Verification: {{ current_verification_status|title }}</span>{% endif %}
+        {% if current_date_range %}<span class="badge bg-primary">Date: {{ current_date_range|title }}</span>{% endif %}
+        {% if current_date_from or current_date_to %}<span class="badge bg-primary">Range: {{ current_date_from|default:"..." }} → {{ current_date_to|default:"..." }}</span>{% endif %}
+        {% if current_state_name %}<span class="badge bg-primary">State: {{ current_state_name }}</span>{% endif %}
+        {% if current_district_name %}<span class="badge bg-primary">District: {{ current_district_name }}</span>{% endif %}
+        {% if current_program_name %}<span class="badge bg-primary">Program: {{ current_program_name }}</span>{% endif %}
+        {% if current_qualification_name %}<span class="badge bg-primary">Qualification: {{ current_qualification_name }}</span>{% endif %}
+        {% if current_training_partner_name %}<span class="badge bg-primary">Training Partner: {{ current_training_partner_name }}</span>{% endif %}
+        {% if current_gender %}<span class="badge bg-primary">Gender: {{ current_gender }}</span>{% endif %}
+        <a href="{% url 'application_pending' %}" class="btn btn-sm btn-outline-danger ms-auto"><i class="bi bi-x-lg me-1"></i>Clear All</a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Bulk Selection Toolbar (hidden until rows are selected) -->
+{% csrf_token %}
+<div id="bulkToolbar" class="bulk-toolbar d-none p-2 px-3 mb-3">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <span class="fw-bold" id="selectionCount">0 applications selected</span>
+        <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
+            <button type="button" id="clearSelectionBtn" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-x-lg me-1"></i>Clear Selection
+            </button>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="bulkActionsDropdown" data-bs-toggle="dropdown" aria-expanded="false" disabled>
+                    <i class="bi bi-list-check me-1"></i>Bulk Actions
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="bulkActionsDropdown">
+                    <li><h6 class="dropdown-header">Verification</h6></li>
+                    <li><a class="dropdown-item bulk-action" href="#" data-action="mark-verified"><i class="bi bi-check2-circle me-2"></i>Mark as Verified</a></li>
+                    <li><a class="dropdown-item bulk-action" href="#" data-action="mark-correction"><i class="bi bi-pencil-square me-2"></i>Request Correction</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><h6 class="dropdown-header">Export / Download</h6></li>
+                    <li><a class="dropdown-item bulk-action" href="#" data-action="export" data-format="csv"><i class="bi bi-filetype-csv me-2"></i>Export as CSV</a></li>
+                    <li><a class="dropdown-item bulk-action" href="#" data-action="export" data-format="excel"><i class="bi bi-file-earmark-excel me-2"></i>Export as Excel</a></li>
+                    <li><a class="dropdown-item bulk-action" href="#" data-action="download-docs"><i class="bi bi-file-earmark-zip me-2"></i>Download Documents</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Action Result Message -->
+<div id="bulkMessage" class="d-none"></div>
+
+<!-- Result Count -->
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <span class="text-muted small">
+        <i class="bi bi-info-circle me-1"></i>
+        {% if filters_active %}
+            {% if total_count == 1 %}Showing 1 of {{ total_pending }} pending application{% else %}Showing {{ total_count }} of {{ total_pending }} pending applications{% endif %}
+        {% else %}
+            {% if total_count == 1 %}Showing 1 pending application{% else %}Showing {{ total_count }} pending applications{% endif %}
+        {% endif %}
+    </span>
+</div>
+
+<!-- Data Table -->
+<div class="applications-table-wrapper">
+    <table class="table table-striped table-hover align-middle applications-table">
+        <thead class="table-dark">
+            <tr>
+                <th scope="col" class="sel-col">
+                    <input class="form-check-input" type="checkbox" id="selectAllCheckbox" title="Select all applications on this page">
+                </th>
+                <th scope="col" class="col-appno">Application No</th>
+                <th scope="col" class="col-photo">Photo</th>
+                <th scope="col" class="col-name">Full Name</th>
+                <th scope="col" class="col-mobile">Mobile</th>
+                <th scope="col" class="col-email">Email</th>
+                <th scope="col" class="col-aadhaar">Aadhaar</th>
+                <th scope="col" class="col-program">Program</th>
+                <th scope="col" class="col-qual">Qualification</th>
+                <th scope="col" class="col-inst">Institution</th>
+                <th scope="col" class="col-date">Submission Date</th>
+                <th scope="col" class="col-verif">Verification Status</th>
+                <th scope="col" class="col-appstatus">Application Status</th>
+                <th scope="col" class="col-actions">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for app in page_obj %}
+            <tr data-id="{{ app.id }}">
+                <td class="sel-col">
+                    <input class="form-check-input application-checkbox" type="checkbox" value="{{ app.id }}">
+                </td>
+                <td class="col-appno cell-nowrap"><strong>{{ app.application_number }}</strong></td>
+                <td class="col-photo">
+                    {% if app.photo_url %}
+                        <img src="{{ app.photo_url }}" class="photo-thumb" alt="Photo">
+                    {% else %}
+                        <div class="photo-thumb d-inline-flex align-items-center justify-content-center text-muted bg-light" style="font-size: 1.4rem;">
+                            <i class="bi bi-person"></i>
+                        </div>
+                    {% endif %}
+                </td>
+                <td class="col-name">{{ app.full_name }}</td>
+                <td class="col-mobile cell-nowrap">{{ app.mobile_number }}</td>
+                <td class="col-email cell-email">{{ app.email }}</td>
+                <td class="col-aadhaar cell-nowrap">{{ app.aadhaar_number }}</td>
+                <td class="col-program">{{ app.program_opting.name|default:"-" }}</td>
+                <td class="col-qual">{{ app.qualification.name|default:"-" }}</td>
+                <td class="col-inst">{{ app.institution|default:"-" }}</td>
+                <td class="col-date cell-nowrap">{{ app.submission_date|date:"M d, Y" }}</td>
+                <td class="col-verif">
+                    {% if app.verification_status.code == 'VERIFIED' %}
+                        <span class="badge bg-success status-badge">Verified</span>
+                    {% elif app.verification_status.code == 'CORRECTION' %}
+                        <span class="badge bg-warning text-dark status-badge">Need Correction</span>
+                    {% else %}
+                        <span class="badge bg-secondary status-badge">Pending</span>
+                    {% endif %}
+                </td>
+                <td class="col-appstatus">
+                    <span class="badge bg-warning text-dark status-badge">Pending Review</span>
+                </td>
+                <td class="col-actions">
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="actionsMenu{{ app.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                            Actions
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="actionsMenu{{ app.id }}">
+                            <li><a class="dropdown-item" href="{% url 'admin:registrations_studentapplication_change' app.id %}"><i class="bi bi-eye"></i> View Application</a></li>
+                            <li>
+                                {% if app.acknowledgement_pdf %}
+                                <a class="dropdown-item" href="{{ app.acknowledgement_pdf.url }}" target="_blank"><i class="bi bi-file-earmark-text"></i> Review</a>
+                                {% else %}
+                                <a class="dropdown-item" href="{% url 'admin:registrations_studentapplication_change' app.id %}"><i class="bi bi-file-earmark-text"></i> Review</a>
+                                {% endif %}
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item row-action" href="#" data-action="mark-verified" data-id="{{ app.id }}"><i class="bi bi-check2-circle text-success"></i> Verify</a></li>
+                            <li><a class="dropdown-item row-action" href="#" data-action="mark-correction" data-id="{{ app.id }}"><i class="bi bi-pencil-square text-warning"></i> Request Correction</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'admin:registrations_studentapplication_change' app.id %}"><i class="bi bi-folder2-open"></i> View Documents</a></li>
+                            <li><a class="dropdown-item row-action" href="#" data-action="download-docs" data-id="{{ app.id }}"><i class="bi bi-file-earmark-zip"></i> Download Documents</a></li>
+                        </ul>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="14" class="text-center py-5 text-muted">
+                    <i class="bi bi-check2-circle fs-1 d-block mb-3"></i>
+                    {% if filters_active %}
+                    <h5 class="fw-bold text-dark">No pending applications match the selected filters</h5>
+                    <p class="mb-3">Try changing your search or filter criteria.</p>
+                    {% elif total_pending == 0 %}
+                    <h5 class="fw-bold text-dark">No pending applications found</h5>
+                    <p class="mb-3">There are currently no applications waiting for review.</p>
+                    {% else %}
+                    <h5 class="fw-bold text-dark">No pending applications found</h5>
+                    <p class="mb-3">There are currently no applications waiting for review.</p>
+                    {% endif %}
+                    <a href="{% url 'application_pending' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x-circle me-1"></i>Clear Filters</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1{% if query_string %}&{{ query_string }}{% endif %}">&laquo; First</a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}">Previous</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">&laquo; First</span></li>
+        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+        {% endif %}
+
+        <li class="page-item active"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}">Next</a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if query_string %}&{{ query_string }}{% endif %}">Last &raquo;</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Next</span></li>
+        <li class="page-item disabled"><span class="page-link">Last &raquo;</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+
+    var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    csrfToken = csrfToken ? csrfToken.value : '';
+
+    // ---- State → District linkage ----
+    var stateSelect = document.getElementById('state');
+    var districtSelect = document.getElementById('district');
+    function filterDistricts() {
+        var selectedState = stateSelect.value;
+        var options = districtSelect.querySelectorAll('option');
+        options.forEach(function (opt) {
+            if (!opt.value || !selectedState) {
+                opt.style.display = '';
+            } else {
+                opt.style.display = opt.getAttribute('data-state') === selectedState ? '' : 'none';
+            }
+        });
+    }
+    if (stateSelect && districtSelect) {
+        stateSelect.addEventListener('change', function () {
+            districtSelect.value = '';
+            filterDistricts();
+        });
+        filterDistricts();
+    }
+
+    // ---- Custom date range toggle ----
+    var dateRangeSelect = document.getElementById('date_range');
+    var customDateRange = document.getElementById('customDateRange');
+    function toggleCustomDateRange() {
+        if (!customDateRange || !dateRangeSelect) return;
+        if (dateRangeSelect.value === 'custom') {
+            customDateRange.classList.remove('d-none');
+        } else {
+            customDateRange.classList.add('d-none');
+        }
+    }
+    if (dateRangeSelect) {
+        dateRangeSelect.addEventListener('change', toggleCustomDateRange);
+        toggleCustomDateRange();
+    }
+
+    function getSelectedIds() {
+        var ids = [];
+        document.querySelectorAll('.application-checkbox').forEach(function (cb) {
+            if (cb.checked) ids.push(cb.value);
+        });
+        return ids;
+    }
+
+    function updateUI() {
+        var cbs = document.querySelectorAll('.application-checkbox');
+        var selected = getSelectedIds();
+        var count = selected.length;
+        var total = cbs.length;
+        var toolbar = document.getElementById('bulkToolbar');
+        var msg = document.getElementById('bulkMessage');
+        var selectAll = document.getElementById('selectAllCheckbox');
+        var counter = document.getElementById('selectionCount');
+        var bulkBtn = document.getElementById('bulkActionsDropdown');
+
+        cbs.forEach(function (cb) {
+            var row = cb.closest('tr');
+            if (row) row.classList.toggle('row-selected', cb.checked);
+        });
+
+        if (selectAll) {
+            selectAll.checked = count > 0 && count === total;
+            selectAll.indeterminate = count > 0 && count < total;
+        }
+
+        if (counter) {
+            counter.textContent = count + ' application' + (count === 1 ? '' : 's') + ' selected';
+        }
+        if (toolbar) toolbar.classList.toggle('d-none', count === 0);
+        if (bulkBtn) bulkBtn.disabled = count === 0;
+        if (msg) msg.classList.add('d-none');
+    }
+
+    function showMessage(type, text) {
+        var msg = document.getElementById('bulkMessage');
+        if (!msg) return;
+        var classes = {
+            success: 'alert alert-success alert-dismissible fade show',
+            error: 'alert alert-danger alert-dismissible fade show',
+            warning: 'alert alert-warning alert-dismissible fade show'
+        };
+        msg.className = classes[type] || classes.success;
+        msg.innerHTML = '<i class="bi bi-' + (type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'exclamation-circle') + ' me-2"></i>'
+            + text
+            + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+        msg.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+
+    function postForm(url, ids) {
+        var body = new URLSearchParams();
+        ids.forEach(function (id) { body.append('selected_ids[]', id); });
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+            body: body.toString(),
+            credentials: 'same-origin'
+        });
+    }
+
+    function clearSelection() {
+        document.querySelectorAll('.application-checkbox').forEach(function (cb) { cb.checked = false; });
+        var selectAll = document.getElementById('selectAllCheckbox');
+        if (selectAll) { selectAll.checked = false; selectAll.indeterminate = false; }
+        updateUI();
+    }
+
+    function handleVerifyOrCorrection(url, ids, okMsg) {
+        postForm(url, ids).then(function (resp) {
+            return resp.json().then(function (data) { return { ok: resp.ok, data: data }; });
+        }).then(function (result) {
+            if (!result.ok) {
+                showMessage('error', result.data.error || 'Operation failed.');
+                return;
+            }
+            var processed = result.data.processed;
+            var skipped = result.data.skipped || 0;
+            var msg = okMsg.replace('{n}', processed);
+            if (skipped > 0) {
+                msg += ' ' + skipped + ' draft' + (skipped === 1 ? '' : 's') + ' skipped.';
+            }
+            showMessage('success', msg);
+            clearSelection();
+            setTimeout(function () { location.reload(); }, 900);
+        });
+    }
+
+    // Individual + Select All
+    document.querySelectorAll('.application-checkbox').forEach(function (cb) {
+        cb.addEventListener('change', updateUI);
+    });
+    var selectAll = document.getElementById('selectAllCheckbox');
+    if (selectAll) {
+        selectAll.addEventListener('change', function () {
+            var checked = selectAll.checked;
+            document.querySelectorAll('.application-checkbox').forEach(function (cb) { cb.checked = checked; });
+            updateUI();
+        });
+    }
+
+    // Clear selection
+    var clearBtn = document.getElementById('clearSelectionBtn');
+    if (clearBtn) clearBtn.addEventListener('click', clearSelection);
+
+    // Per-row actions
+    document.querySelectorAll('.row-action').forEach(function (link) {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            var id = link.getAttribute('data-id');
+            var action = link.getAttribute('data-action');
+            if (!id) return;
+            if (action === 'mark-verified') {
+                handleVerifyOrCorrection('{% url "bulk_verify" %}', [id], '{n} application(s) verified.');
+            } else if (action === 'mark-correction') {
+                handleVerifyOrCorrection('{% url "bulk_correction" %}', [id], '{n} application(s) marked for correction.');
+            } else if (action === 'download-docs') {
+                postForm('{% url "bulk_download_documents" %}', [id]).then(function (resp) {
+                    if (!resp.ok) {
+                        return resp.text().then(function (t) { showMessage('error', 'Download failed: ' + (t || 'server error')); });
+                    }
+                    var disposition = resp.headers.get('Content-Disposition') || '';
+                    var match = /filename="?([^"]+)"?/.exec(disposition);
+                    var filename = match ? match[1] : 'application_documents.zip';
+                    return resp.blob().then(function (blob) {
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        showMessage('success', 'Documents downloaded successfully.');
+                    });
+                });
+            }
+        });
+    });
+
+    // Bulk actions
+    document.querySelectorAll('.bulk-action').forEach(function (link) {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            var ids = getSelectedIds();
+            var action = link.getAttribute('data-action');
+            var format = link.getAttribute('data-format') || 'csv';
+
+            if (ids.length === 0) {
+                showMessage('error', 'Please select at least one application.');
+                return;
+            }
+
+            if (action === 'mark-verified') {
+                handleVerifyOrCorrection('{% url "bulk_verify" %}', ids, ids.length + ' application' + (ids.length === 1 ? '' : 's') + ' verified.');
+            }
+
+            if (action === 'mark-correction') {
+                handleVerifyOrCorrection('{% url "bulk_correction" %}', ids, ids.length + ' application' + (ids.length === 1 ? '' : 's') + ' marked for correction.');
+            }
+
+            if (action === 'export') {
+                postForm('{% url "bulk_export" %}', ids).then(function (resp) {
+                    if (!resp.ok) {
+                        return resp.text().then(function (t) { showMessage('error', 'Export failed: ' + (t || 'server error')); });
+                    }
+                    var disposition = resp.headers.get('Content-Disposition') || '';
+                    var match = /filename="?([^"]+)"?/.exec(disposition);
+                    var filename = match ? match[1] : (format === 'excel' ? 'selected_applications.xlsx' : 'selected_applications.csv');
+                    return resp.blob().then(function (blob) {
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        showMessage('success', ids.length + ' application' + (ids.length === 1 ? '' : 's') + ' exported successfully.');
+                    });
+                });
+            }
+
+            if (action === 'download-docs') {
+                postForm('{% url "bulk_download_documents" %}', ids).then(function (resp) {
+                    if (!resp.ok) {
+                        return resp.text().then(function (t) { showMessage('error', 'Download failed: ' + (t || 'server error')); });
+                    }
+                    var disposition = resp.headers.get('Content-Disposition') || '';
+                    var match = /filename="?([^"]+)"?/.exec(disposition);
+                    var filename = match ? match[1] : 'selected_applications_documents.zip';
+                    return resp.blob().then(function (blob) {
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        showMessage('success', 'Documents for ' + ids.length + ' application' + (ids.length === 1 ? '' : 's') + ' downloaded successfully.');
+                    });
+                });
+            }
+        });
+    });
+
+    updateUI();
+})();
+</script>
+{% endblock %}

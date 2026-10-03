@@ -1,0 +1,239 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ app.full_name|default:app.application_number }} | Student Profile{% endblock %}
+
+{% block extra_css %}
+<style>
+    .summary-icon {
+        width: 44px;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.75rem;
+    }
+    .detail-label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: #6c757d;
+    }
+    .detail-value { font-weight: 600; color: #212529; }
+    .doc-thumb {
+        max-width: 130px;
+        max-height: 150px;
+        object-fit: cover;
+        border-radius: 0.375rem;
+        border: 1px solid #dee2e6;
+    }
+    .timeline { position: relative; padding-left: 1.25rem; }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 0.375rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #e9ecef;
+    }
+    .timeline-item { position: relative; margin-bottom: 1rem; }
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -1.2rem;
+        top: 0.35rem;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #0d6efd;
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 2px #0d6efd;
+    }
+    .photo-thumb-lg {
+        width: 90px;
+        height: 105px;
+        object-fit: cover;
+        border-radius: 0.5rem;
+        border: 1px solid #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <h1 class="h2 mb-0">{{ app.full_name|default:"Student" }}</h1>
+        <div class="text-muted small">
+            {{ app.application_number|default:"—" }}
+            <span class="mx-1">•</span>
+            {% if app.is_draft %}
+                <span class="badge bg-info text-dark">Draft</span>
+            {% else %}
+                <span class="badge bg-success">Submitted</span>
+            {% endif %}
+            {% if app.status %}<span class="badge bg-secondary">{{ app.status.name }}</span>{% endif %}
+        </div>
+    </div>
+    <div class="btn-toolbar mb-2 mb-md-0 gap-2">
+        <a href="{% url 'student_directory' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Back to Directory</a>
+        <a href="{% url 'admin:registrations_studentapplication_change' app.id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i> Edit</a>
+    </div>
+</div>
+
+<!-- Personal / Photo summary -->
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-auto">
+                        <div class="d-flex flex-column align-items-center gap-2">
+                            {% for doc in app.documents.all %}
+                                {% if 'passport' in doc.doc_type|lower %}
+                                    {% if doc.compressed_file %}
+                                        <img src="{{ doc.compressed_file.url }}" class="photo-thumb-lg" alt="Photo">
+                                    {% elif doc.original_file %}
+                                        <img src="{{ doc.original_file.url }}" class="photo-thumb-lg" alt="Photo">
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                            {% if not app.documents.all %}
+                            <div class="photo-thumb-lg d-flex align-items-center justify-content-center text-muted bg-light" style="font-size: 2.5rem;">
+                                <i class="bi bi-person"></i>
+                            </div>
+                            {% endif %}
+                            <span class="text-muted small text-center">{{ app.application_number }}</span>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="row g-3">
+                            <div class="col-md-4"><div class="detail-label">Father's Name</div><div class="detail-value">{{ app.father_name|default:"—" }}</div></div>
+                            <div class="col-md-4"><div class="detail-label">Mother's Name</div><div class="detail-value">{{ app.mother_name|default:"—" }}</div></div>
+                            <div class="col-md-4"><div class="detail-label">Date of Birth</div><div class="detail-value">{{ app.dob|date:"d M Y"|default:"—" }}</div></div>
+                            <div class="col-md-4"><div class="detail-label">Gender</div><div class="detail-value">{{ app.gender|default:"—" }}</div></div>
+                            <div class="col-md-4"><div class="detail-label">Aadhaar</div><div class="detail-value">{{ app.aadhaar_number|default:"—" }}</div></div>
+                            <div class="col-md-4"><div class="detail-label">ABC / APAAR ID</div><div class="detail-value">{{ app.abc_id|default:"—" }}</div></div>
+                            <div class="col-md-4"><div class="detail-label">Community</div><div class="detail-value">{{ app.community.name|default:"—" }}</div></div>
+                            <div class="col-md-4"><div class="detail-label">Religion</div><div class="detail-value">{{ app.religion.name|default:"—" }}</div></div>
+                            <div class="col-md-4"><div class="detail-label">Annual Income</div><div class="detail-value">{{ app.annual_income|default:"—" }}</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left column: details + application -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-header bg-white fw-bold py-3"><i class="bi bi-telephone me-2 text-primary"></i>Contact Details</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4"><div class="detail-label">Mobile</div><div class="detail-value">{{ app.mobile_number|default:"—" }}</div></div>
+                    <div class="col-md-4"><div class="detail-label">Alternative Mobile</div><div class="detail-value">{{ app.alternative_mobile|default:"—" }}</div></div>
+                    <div class="col-md-4"><div class="detail-label">Email</div><div class="detail-value">{{ app.email|default:"—" }}</div></div>
+                    <div class="col-12"><div class="detail-label">Communication Address</div><div class="detail-value">{{ app.communication_address|default:"—" }}</div></div>
+                    <div class="col-md-3"><div class="detail-label">State</div><div class="detail-value">{{ app.state.name|default:"—" }}</div></div>
+                    <div class="col-md-3"><div class="detail-label">District</div><div class="detail-value">{{ app.district.name|default:"—" }}</div></div>
+                    <div class="col-md-3"><div class="detail-label">Pincode</div><div class="detail-value">{{ app.pincode|default:"—" }}</div></div>
+                    <div class="col-md-3"><div class="detail-label">Area / Village</div><div class="detail-value">{{ app.area_village_name|default:"—" }}</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-header bg-white fw-bold py-3"><i class="bi bi-mortarboard me-2 text-success"></i>Educational Details</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4"><div class="detail-label">Program</div><div class="detail-value">{{ app.program_opting.name|default:"—" }}</div></div>
+                    <div class="col-md-4"><div class="detail-label">Qualification</div><div class="detail-value">{{ app.qualification.name|default:app.custom_stream|default:"—" }}</div></div>
+                    <div class="col-md-4"><div class="detail-label">Applying Qualification</div><div class="detail-value">{{ app.applying_qualification|default:"—" }}</div></div>
+                    <div class="col-md-3"><div class="detail-label">Institution</div><div class="detail-value">{{ app.institution|default:"—" }}</div></div>
+                    <div class="col-md-3"><div class="detail-label">Hall Ticket No</div><div class="detail-value">{{ app.hall_ticket_number|default:"—" }}</div></div>
+                    <div class="col-md-3"><div class="detail-label">Registration No</div><div class="detail-value">{{ app.registration_number|default:"—" }}</div></div>
+                    <div class="col-md-3"><div class="detail-label">NIELIT Registration No</div><div class="detail-value">{{ app.nielit_registration_number|default:"—" }}</div></div>
+                    <div class="col-md-3"><div class="detail-label">Year of Passing</div><div class="detail-value">{{ app.year_of_passing|default:"—" }}</div></div>
+                    <div class="col-md-3"><div class="detail-label">Percentage</div><div class="detail-value">{{ app.percentage|default:"—" }}</div></div>
+                    <div class="col-md-3"><div class="detail-label">Training Partner / ATC</div><div class="detail-value">{{ app.training_partner.name|default:"—" }}</div></div>
+                    <div class="col-md-3"><div class="detail-label">Batch Code</div><div class="detail-value">{{ app.batch_code|default:"—" }}</div></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-header bg-white fw-bold py-3"><i class="bi bi-file-earmark-text me-2 text-info"></i>Application Details</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4"><div class="detail-label">Application No</div><div class="detail-value">{{ app.application_number|default:"—" }}</div></div>
+                    <div class="col-md-4"><div class="detail-label">Submitted</div><div class="detail-value">{{ app.submission_date|date:"d M Y, g:i A"|default:"—" }}</div></div>
+                    <div class="col-md-4"><div class="detail-label">Last Updated</div><div class="detail-value">{{ app.last_updated|date:"d M Y, g:i A"|default:"—" }}</div></div>
+                    <div class="col-md-4"><div class="detail-label">Application Status</div>
+                        <div class="detail-value">
+                            {% if app.is_draft %}<span class="badge bg-info text-dark">Draft</span>
+                            {% else %}<span class="badge bg-success">Submitted</span>{% endif %}
+                            {% if app.status %}<span class="badge bg-secondary">{{ app.status.name }}</span>{% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4"><div class="detail-label">Verification Status</div>
+                        <div class="detail-value">
+                            {% if app.verification_status.code == 'VERIFIED' %}<span class="badge bg-success">Verified</span>
+                            {% elif app.verification_status.code == 'CORRECTION' %}<span class="badge bg-warning text-dark">Need Correction</span>
+                            {% else %}<span class="badge bg-secondary">Pending</span>{% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4"><div class="detail-label">Consent</div><div class="detail-value">{{ app.consent_given|yesno:"Accepted,Not Accepted" }}</div></div>
+                    {% if app.remarks %}<div class="col-12"><div class="detail-label">Remarks</div><div class="detail-value">{{ app.remarks }}</div></div>{% endif %}
+                    <div class="col-12">
+                        <a href="{% url 'admin:registrations_studentapplication_change' app.id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye me-1"></i>Open Application in Admin</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right column: documents + timeline -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-header bg-white fw-bold py-3"><i class="bi bi-folder2-open me-2 text-warning"></i>Uploaded Documents</div>
+            <div class="card-body">
+                {% for group, docs in doc_groups.items %}
+                <h6 class="text-muted text-uppercase small fw-bold mt-2">{{ group }}</h6>
+                <div class="d-flex flex-wrap gap-2 mb-2">
+                    {% for doc in docs %}
+                        {% if doc.compressed_file or doc.original_file %}
+                        <a href="{% if doc.compressed_file %}{{ doc.compressed_file.url }}{% else %}{{ doc.original_file.url }}{% endif %}" target="_blank" title="{{ doc.original_filename }}" class="text-decoration-none">
+                            {% if doc.mime_type|slice:":5" == "image" %}
+                                <img src="{% if doc.compressed_file %}{{ doc.compressed_file.url }}{% else %}{{ doc.original_file.url }}{% endif %}" class="doc-thumb" alt="{{ group }}">
+                            {% else %}
+                                <span class="badge bg-secondary"><i class="bi bi-file-earmark me-1"></i>{{ doc.doc_type_display }}</span>
+                            {% endif %}
+                        </a>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                {% empty %}
+                <p class="text-muted small mb-0">No documents uploaded.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white fw-bold py-3"><i class="bi bi-clock-history me-2 text-danger"></i>Timeline / Status</div>
+            <div class="card-body">
+                <div class="timeline">
+                    {% for ev in events %}
+                    <div class="timeline-item">
+                        <div class="fw-bold small">{{ ev.title }}</div>
+                        <div class="text-muted small">{{ ev.time|date:"d M Y, g:i A" }}</div>
+                        {% if ev.detail %}<div class="text-muted small">{{ ev.detail }}</div>{% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

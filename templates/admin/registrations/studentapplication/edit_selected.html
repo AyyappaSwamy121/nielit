@@ -1,0 +1,86 @@
+{% extends "admin/base_site.html" %}
+{% block title %}Bulk edit selected applications | CSC Admin{% endblock %}
+
+{% block content %}
+<h1>Bulk edit {{ applications.count }} selected application(s)</h1>
+<p class="help">Only fields you tick will be changed. Leave values blank to skip a field.</p>
+
+<form method="post" action="">
+    {% csrf_token %}
+    {% for name, value in hidden_fields %}
+        <input type="hidden" name="{{ name }}" value="{{ value }}">
+    {% endfor %}
+
+    <table style="width:100%; border-collapse:collapse; max-width:760px;">
+        <thead>
+            <tr>
+                <th style="border:1px solid #ddd; padding:6px; width:60px;">Change</th>
+                <th style="border:1px solid #ddd; padding:6px;">Field</th>
+                <th style="border:1px solid #ddd; padding:6px;">New value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="border:1px solid #ddd; padding:6px; text-align:center;"><input type="checkbox" name="set_status"></td>
+                <td style="border:1px solid #ddd; padding:6px;">Application status</td>
+                <td style="border:1px solid #ddd; padding:6px;">
+                    <select name="value_status">
+                        <option value="">-- keep current --</option>
+                        {% for s in statuses %}<option value="{{ s.pk }}">{{ s.name }}</option>{% endfor %}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td style="border:1px solid #ddd; padding:6px; text-align:center;"><input type="checkbox" name="set_verification_status"></td>
+                <td style="border:1px solid #ddd; padding:6px;">Verification status</td>
+                <td style="border:1px solid #ddd; padding:6px;">
+                    <select name="value_verification_status">
+                        <option value="">-- keep current --</option>
+                        {% for s in verification_statuses %}<option value="{{ s.pk }}">{{ s.name }}</option>{% endfor %}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td style="border:1px solid #ddd; padding:6px; text-align:center;"><input type="checkbox" name="set_training_partner"></td>
+                <td style="border:1px solid #ddd; padding:6px;">Training partner / ATC</td>
+                <td style="border:1px solid #ddd; padding:6px;">
+                    <select name="value_training_partner">
+                        <option value="">-- keep current --</option>
+                        {% for tp in training_partners %}<option value="{{ tp.pk }}">{{ tp.name }}</option>{% endfor %}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td style="border:1px solid #ddd; padding:6px; text-align:center;"><input type="checkbox" name="set_program_opting"></td>
+                <td style="border:1px solid #ddd; padding:6px;">Program</td>
+                <td style="border:1px solid #ddd; padding:6px;">
+                    <select name="value_program_opting">
+                        <option value="">-- keep current --</option>
+                        {% for p in programs %}<option value="{{ p.pk }}">{{ p.name }}</option>{% endfor %}
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td style="border:1px solid #ddd; padding:6px; text-align:center;"><input type="checkbox" name="set_batch_code"></td>
+                <td style="border:1px solid #ddd; padding:6px;">Batch code</td>
+                <td style="border:1px solid #ddd; padding:6px;"><input type="text" name="value_batch_code" style="width:100%;"></td>
+            </tr>
+            <tr>
+                <td style="border:1px solid #ddd; padding:6px; text-align:center;"><input type="checkbox" name="set_institution"></td>
+                <td style="border:1px solid #ddd; padding:6px;">Institution</td>
+                <td style="border:1px solid #ddd; padding:6px;"><input type="text" name="value_institution" style="width:100%;"></td>
+            </tr>
+            <tr>
+                <td style="border:1px solid #ddd; padding:6px; text-align:center;"><input type="checkbox" name="set_remarks"></td>
+                <td style="border:1px solid #ddd; padding:6px;">Remarks</td>
+                <td style="border:1px solid #ddd; padding:6px;"><textarea name="value_remarks" rows="2" style="width:100%;"></textarea></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div style="margin-top:16px;">
+        <input type="submit" value="Apply changes" class="default" style="margin-right:8px;">
+        <a href="{% url 'admin:registrations_studentapplication_changelist' %}" class="button">Cancel</a>
+    </div>
+</form>
+{% endblock %}

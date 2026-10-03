@@ -1,0 +1,328 @@
+{% load registration_tags %}
+{% if field.visible %}
+{% if field.field_name == 'full_name' or field.field_name == 'father_name' or field.field_name == 'mother_name' %}
+<div class="form-group">
+    <label for="{{ field.field_name }}" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <input type="text" class="form-control text-only" id="{{ field.field_name }}" name="{{ field.field_name }}"
+        placeholder="{{ field.placeholder }}" value="{{ form_data|get_item:field.field_name }}" {% if field.required %}required{% endif %}
+        inputmode="text" autocomplete="name">
+    {% if field.field_name == 'mother_name' %}<div class="invalid-feedback">Mother's Name is required.</div>{% endif %}
+</div>
+
+{% elif field.field_name == 'dob' %}
+<div class="form-group">
+    <label for="dob" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <input type="date" class="form-control" id="dob" name="dob" value="{{ form_data|get_item:'dob' }}" {% if field.required %}required{% endif %}>
+</div>
+
+{% elif field.field_name == 'gender' %}
+<div class="form-group">
+    <label for="gender" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <select class="form-select" id="gender" name="gender" {% if field.required %}required{% endif %}>
+        <option value="" disabled {% if not form_data|get_item:'gender' %}selected{% endif %}>Choose</option>
+        {% for opt in field.preview_options %}
+        <option value="{{ opt.value }}" {% if form_data|get_item:'gender' == opt.value %}selected{% endif %}>{{ opt.label }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+{% elif field.field_name == 'nationality' %}
+<div class="form-group">
+    <label for="nationality" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <select class="form-select" id="nationality" name="nationality" {% if field.required %}required{% endif %}>
+        <option value="" disabled {% if form_data|get_item:'nationality' and form_data|get_item:'nationality' != '' %}selected{% endif %}>Choose</option>
+        {% for opt in field.preview_options %}
+        <option value="{{ opt.value }}" {% if form_data|get_item:'nationality' == opt.value or opt.value == 'Indian' and not form_data|get_item:'nationality' %}selected{% endif %}>{{ opt.label }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+{% elif field.field_name == 'physically_handicapped' %}
+<div class="form-group">
+    <label for="physically_handicapped" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <select class="form-select" id="physically_handicapped" name="physically_handicapped" {% if field.required %}required{% endif %}>
+        <option value="" disabled {% if form_data|get_item:'physically_handicapped' and form_data|get_item:'physically_handicapped' != '' %}selected{% endif %}>Choose</option>
+        {% for opt in field.preview_options %}
+        <option value="{{ opt.value }}" {% if form_data|get_item:'physically_handicapped' == opt.value or opt.value == 'No' and not form_data|get_item:'physically_handicapped' %}selected{% endif %}>{{ opt.label }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+{% elif field.field_name == 'annual_income' %}
+<div class="form-group">
+    <label for="annual_income" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <input type="text" class="form-control number-only" id="annual_income" name="annual_income"
+        placeholder="{{ field.placeholder }}" value="{{ form_data|get_item:'annual_income' }}" {% if field.required %}required{% endif %}
+        inputmode="numeric" autocomplete="off">
+    <div id="annual_income_words" class="form-text text-primary fw-bold mt-2" style="display: none;"></div>
+</div>
+
+{% elif field.field_name == 'mobile_number' or field.field_name == 'alternative_mobile' %}
+<div class="form-group">
+    <label for="{{ field.field_name }}" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <input type="tel" inputmode="numeric" class="form-control digit-only" id="{{ field.field_name }}"
+        name="{{ field.field_name }}" maxlength="10" placeholder="{{ field.placeholder }}"
+        value="{{ form_data|get_item:field.field_name }}" autocomplete="tel-national" pattern="[1-9][0-9]{9}" {% if field.required %}required{% endif %}>
+</div>
+
+{% elif field.field_name == 'aadhaar_number' %}
+<div class="form-group">
+    <label for="aadhaar_number" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <input type="text" name="aadhaar_number" id="aadhaar_number" class="form-control digit-only"
+        inputmode="numeric" maxlength="12" minlength="12" placeholder="{{ field.placeholder }}"
+        value="{{ form_data|get_item:'aadhaar_number' }}" pattern="[1-9][0-9]{11}" autocomplete="off" {% if field.required %}required{% endif %}>
+</div>
+
+{% elif field.field_name == 'email' %}
+<div class="form-group">
+    <label for="email" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <input type="email" class="form-control" id="email" name="email"
+        placeholder="{{ field.placeholder }}" value="{{ form_data|get_item:'email' }}" {% if field.required %}required{% endif %}>
+</div>
+
+{% elif field.field_name == 'communication_address' %}
+<div class="col-12">
+    <div class="form-group">
+        <label for="communication_address" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+        <textarea class="form-control" id="communication_address" name="communication_address"
+            placeholder="{{ field.placeholder }}" style="height: 100px" {% if field.required %}required{% endif %}>{{ form_data|get_item:'communication_address' }}</textarea>
+    </div>
+    <small class="text-muted d-block mt-1 ms-1">Enter your complete address including House No., Street, Village/Town/City, Landmark, College Name (if applicable), Department, Hall Ticket No., Year of Study, State, District, and Pincode.</small>
+    <div class="invalid-feedback">Complete Address is required.</div>
+</div>
+
+{% elif field.field_name == 'state' %}
+<div class="form-group">
+    <label for="state" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <select class="form-select" id="state" name="state" {% if field.required %}required{% endif %} onchange="loadDistricts()">
+        <option value="" disabled {% if not form_data|get_item:'state' %}selected{% endif %}>Choose</option>
+        <!-- Populated by AJAX -->
+    </select>
+</div>
+
+{% elif field.field_name == 'district' %}
+<div class="form-group">
+    <label for="district" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <select class="form-select" id="district" name="district" {% if field.required %}required{% endif %}>
+        <option value="" disabled {% if not form_data|get_item:'district' %}selected{% endif %}>Choose</option>
+        <!-- Populated by AJAX -->
+    </select>
+</div>
+
+{% elif field.field_name == 'country' %}
+<input type="hidden" id="country" name="country"
+    value="{% for c in countries %}{% if c.name == 'India' %}{{ c.id }}{% endif %}{% endfor %}">
+
+{% elif field.field_name == 'pincode' %}
+<div class="form-group">
+    <label for="pincode" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <input type="text" class="form-control" id="pincode"
+        name="pincode" maxlength="6" placeholder="{{ field.placeholder }}"
+        value="{{ form_data|get_item:'pincode' }}" autocomplete="postal-code" {% if field.required %}required{% endif %}>
+    <div id="pincode_status" class="form-text text-muted small mt-1" aria-live="polite"></div>
+    <div class="invalid-feedback">Pincode must be 6 digits.</div>
+</div>
+
+{% elif field.field_name == 'occupation' or field.field_name == 'marital_status' or field.field_name == 'ex_serviceman' or field.field_name == 'religion' or field.field_name == 'community' or field.field_name == 'training_partner' or field.field_name == 'program_opting' %}
+<div class="form-group">
+    <label for="{{ field.field_name }}" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <select class="form-select" id="{{ field.field_name }}" name="{{ field.field_name }}" {% if field.required %}required{% endif %}>
+        <option value="" disabled {% if not form_data|get_item:field.field_name %}selected{% endif %}>Choose</option>
+        {% for opt in field.preview_options %}
+        <option value="{{ opt.value }}" {% if form_data|get_item:field.field_name == opt.value %}selected{% endif %}>{{ opt.label }}</option>
+        {% endfor %}
+    </select>
+    {% if field.field_name == 'program_opting' %}<div class="invalid-feedback">Please select a program.</div>{% endif %}
+</div>
+
+{% elif field.field_name == 'applying_qualification' %}
+<div class="form-group">
+    <label for="applying_qualification" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <select class="form-select" id="applying_qualification" name="applying_qualification" {% if field.required %}required{% endif %}>
+        <option value="" disabled {% if not form_data|get_item:'applying_qualification' %}selected{% endif %}>--Select One--</option>
+        {% for opt in field.preview_options %}
+        <option value="{{ opt.value }}" {% if form_data|get_item:'applying_qualification' == opt.value %}selected{% endif %}>{{ opt.label }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+{% elif field.field_name == 'mode_of_qualification' %}
+<div class="form-group">
+    <label for="mode_of_qualification" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <select class="form-select" id="mode_of_qualification" name="mode_of_qualification" {% if field.required %}required{% endif %}>
+        <option value="" disabled {% if not form_data|get_item:'mode_of_qualification' %}selected{% endif %}>Select Mode</option>
+        {% for opt in field.preview_options %}
+        <option value="{{ opt.value }}" {% if form_data|get_item:'mode_of_qualification' == opt.value %}selected{% endif %}>{{ opt.label }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+{% elif field.field_name == 'completion_status' %}
+<div class="form-group">
+    <label for="completion_status" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <select class="form-select" id="completion_status" name="completion_status" {% if field.required %}required{% endif %}>
+        <option value="" disabled {% if not form_data|get_item:'completion_status' %}selected{% endif %}>Select Status</option>
+        {% for opt in field.preview_options %}
+        <option value="{{ opt.value }}" {% if form_data|get_item:'completion_status' == opt.value %}selected{% endif %}>{{ opt.label }}</option>
+        {% endfor %}
+    </select>
+</div>
+
+{% elif field.field_name == 'qualification' %}
+<div class="form-group">
+    <label for="qualification" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <select class="form-select" id="qualification" name="qualification" {% if field.required %}required{% endif %}>
+        <option value="" disabled {% if not form_data|get_item:'qualification' %}selected{% endif %}>Select Stream of Qualification</option>
+        {% for category, list in grouped_qualifications.items %}
+        {% if list %}
+        <optgroup label="{{ category }}">
+            {% for q in list %}
+            <option value="{{ q.id }}" {% if form_data|get_item:'qualification' == q.id|stringformat:"s" %}selected{% endif %}>{{ q.name }}</option>
+            {% endfor %}
+        </optgroup>
+        {% endif %}
+        {% endfor %}
+    </select>
+</div>
+
+{% elif field.field_name == 'custom_stream' %}
+<div class="form-group" id="custom_stream_container" style="display: none;">
+    <label for="custom_stream" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <input type="text" class="form-control" id="custom_stream" name="custom_stream"
+        placeholder="{{ field.placeholder }}" value="{{ form_data|get_item:'custom_stream' }}"
+        inputmode="text" autocomplete="off">
+</div>
+
+{% elif field.field_name == 'percentage' %}
+<div class="form-group">
+    <label for="percentage" class="fw-bold mb-2">{{ field.label }} <span id="percentage_asterisk" style="display:none;">*</span></label>
+    <input type="text" inputmode="decimal" class="form-control" id="percentage" name="percentage"
+        placeholder="{{ field.placeholder }}" value="{{ form_data|get_item:'percentage' }}">
+    <div class="cgpa-helper">
+        <span>Need to convert CGPA to Percentage?</span>
+        <a href="https://www.calculatorway.com/cgpa-to-percentage-calculator/" target="_blank" rel="noopener noreferrer" class="cgpa-calc-link">
+            CGPA to Percentage Calculator <span class="converter-external" aria-hidden="true">&#x2197;</span>
+        </a>
+    </div>
+</div>
+
+{% elif field.field_name == 'year_of_passing' %}
+<div class="form-group">
+    <label for="year_of_passing" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <select class="form-select" id="year_of_passing" name="year_of_passing" {% if field.required %}required{% endif %}>
+        <option value="" disabled {% if not form_data|get_item:'year_of_passing' %}selected{% endif %}>Select Year</option>
+        <!-- Options generated via JS -->
+    </select>
+</div>
+
+{% elif field.field_name == 'batch_code' %}
+<div class="form-group">
+    <label for="batch_code" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <input type="text" class="form-control" id="batch_code" name="batch_code"
+        placeholder="Batch Code" value="{{ form_data|get_item:'batch_code' }}" {% if field.readonly %}readonly{% endif %} {% if field.required %}required{% endif %}>
+    <div class="invalid-feedback" id="batch_code_feedback">No batch assigned. Please contact the administrator.</div>
+</div>
+
+{% elif field.field_name == 'institution' %}
+<div class="form-group" id="institution_form_group">
+    <label for="institution" class="fw-bold mb-2">
+        {{ field.label }}{% if field.required %} *{% endif %}
+    </label>
+
+    <div id="institution_select_wrapper" {% if is_other_institution %}style="display: none;"{% endif %}>
+        <select
+            class="form-select"
+            id="institution"
+            name="institution"
+            {% if field.required %}required{% endif %}
+        >
+            <option value="">Select Educational Institution</option>
+            {% for inst in educational_institutions %}
+            <option value="{{ inst.name }}"
+                {% if form_data|get_item:'institution' == inst.name %}selected{% endif %}>
+                {{ inst.name }}
+            </option>
+            {% endfor %}
+            <option value="Other"
+                {% if form_data|get_item:'institution' == 'Other' or is_other_institution %}selected{% endif %}>
+                Other
+            </option>
+        </select>
+    </div>
+
+    <div id="other_institution_wrapper" class="mt-2" {% if not is_other_institution %}style="display: none;"{% endif %}>
+        <div class="input-group">
+            <input
+                type="text"
+                class="form-control"
+                id="other_institution"
+                name="other_institution"
+                placeholder="Enter Name of Educational Institution"
+                maxlength="200"
+                value="{% if is_other_institution %}{{ form_data|get_item:'institution' }}{% elif form_data|get_item:'other_institution' %}{{ form_data|get_item:'other_institution' }}{% endif %}"
+            >
+            <button
+                type="button"
+                class="btn btn-outline-secondary"
+                id="btn_back_to_institution_list"
+                title="Select from list"
+            >
+                <i class="bi bi-arrow-left me-1"></i>Choose from list
+            </button>
+        </div>
+        <small class="text-muted d-block mt-1">If your institution is not listed, enter its full official name above.</small>
+    </div>
+
+    <div class="invalid-feedback fw-bold" id="institution-feedback"></div>
+</div>
+
+{% elif field.field_name == 'abc_id' %}
+<div class="form-group">
+    <label for="abc_id" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <input type="text" inputmode="numeric" class="form-control digit-only" id="abc_id" name="abc_id"
+        maxlength="12" placeholder="{{ field.placeholder }}" value="{{ form_data|get_item:'abc_id' }}" {% if field.required %}required{% endif %}>
+</div>
+
+{% elif field.field_name == 'hall_ticket_number' or field.field_name == 'registration_number' %}
+<div class="form-group">
+    <label for="{{ field.field_name }}" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    <input type="text" class="form-control" id="{{ field.field_name }}" name="{{ field.field_name }}"
+        placeholder="{{ field.placeholder }}" value="{{ form_data|get_item:field.field_name }}" {% if field.required %}required{% endif %}
+        inputmode="text" autocomplete="off">
+</div>
+
+{% elif field.field_name == 'nielit_registration_number' %}
+<div class="form-group">
+    <label for="nielit_registration_number" class="fw-bold mb-2">{{ field.label }} (Optional)</label>
+    <input type="text" class="form-control" id="nielit_registration_number" name="nielit_registration_number"
+        maxlength="50" placeholder="{{ field.placeholder }}" value="{{ form_data|get_item:'nielit_registration_number' }}" inputmode="text" autocomplete="off">
+</div>
+
+{% else %}
+{# Generic fallback for any newly-added config field #}
+<div class="form-group">
+    <label for="{{ field.field_name }}" class="fw-bold mb-2">{{ field.label }}{% if field.required %} *{% endif %}</label>
+    {% if field.field_type == 'textarea' %}
+    <textarea class="form-control" id="{{ field.field_name }}" name="{{ field.field_name }}" rows="3" placeholder="{{ field.placeholder }}" {% if field.required %}required{% endif %}>{{ form_data|get_item:field.field_name }}</textarea>
+    {% elif field.field_type == 'select' or field.field_type == 'radio' %}
+    <select class="form-select" id="{{ field.field_name }}" name="{{ field.field_name }}" {% if field.required %}required{% endif %}>
+        <option value="" disabled {% if not form_data|get_item:field.field_name %}selected{% endif %}>Choose</option>
+        {% for opt in field.preview_options %}
+        <option value="{{ opt.value }}" {% if form_data|get_item:field.field_name == opt.value %}selected{% endif %}>{{ opt.label }}</option>
+        {% endfor %}
+    </select>
+    {% elif field.field_type == 'checkbox' %}
+    <div class="form-check form-switch">
+        <input class="form-check-input" type="checkbox" id="{{ field.field_name }}" name="{{ field.field_name }}" value="true" {% if form_data|get_item:field.field_name %}checked{% endif %}>
+        <label class="form-check-label" for="{{ field.field_name }}">{{ field.help_text|default:'Enable' }}</label>
+    </div>
+    {% else %}
+    <input type="{{ field.field_type }}" class="form-control" id="{{ field.field_name }}" name="{{ field.field_name }}"
+        placeholder="{{ field.placeholder }}" value="{{ form_data|get_item:field.field_name }}" {% if field.required %}required{% endif %}
+        {% if field.min_length %}minlength="{{ field.min_length }}"{% endif %}
+        {% if field.max_length %}maxlength="{{ field.max_length }}"{% endif %}>
+    {% endif %}
+    {% if field.help_text %}<div class="form-text text-muted">{{ field.help_text }}</div>{% endif %}
+</div>
+{% endif %}
+{% endif %}

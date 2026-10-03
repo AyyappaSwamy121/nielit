@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Form Builder | Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <h1 class="h2"><span class="material-icons-round align-middle me-2 text-secondary" style="font-size: 1.8rem;">dashboard_customize</span>Form Builder</h1>
+        <p class="text-muted mb-0">Configure student registration form fields, validation rules and field visibility.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'form_builder_preview' %}" class="btn btn-outline-primary">
+            <span class="material-icons-round align-middle me-1" style="font-size: 1.1rem;">visibility</span> Preview Form
+        </a>
+        <a href="{% url 'form_builder_history' %}" class="btn btn-outline-secondary">
+            <span class="material-icons-round align-middle me-1" style="font-size: 1.1rem;">history</span> History
+        </a>
+        {% if can_change %}
+        <a href="{% url 'form_builder_new' %}" class="btn btn-primary">
+            <span class="material-icons-round align-middle me-1" style="font-size: 1.1rem;">add</span> Add Field
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% else %}success{% endif %} alert-dismissible fade show" role="alert">
+    <span class="material-icons-round align-middle me-2" style="font-size: 1.1rem;">{% if message.tags == 'error' %}error{% else %}check_circle{% endif %}</span>{{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-bold small text-muted">Search</label>
+                <input type="text" class="form-control" id="searchBox" placeholder="Search label or field name..." value="{{ filters.q }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold small text-muted">Section</label>
+                <select class="form-select" id="filterSection">
+                    <option value="">All Sections</option>
+                    {% for s in sections %}
+                    <option value="{{ s.id }}" {% if filters.section == s.id|stringformat:'s' %}selected{% endif %}>{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold small text-muted">Field Type</label>
+                <select class="form-select" id="filterType">
+                    <option value="">All Types</option>
+                    {% for value, label in field_type_choices %}
+                    <option value="{{ value }}" {% if filters.type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-1">
+                <label class="form-label fw-bold small text-muted">Required</label>
+                <select class="form-select" id="filterRequired">
+                    <option value="">All</option>
+                    <option value="yes" {% if filters.required == 'yes' %}selected{% endif %}>Yes</option>
+                    <option value="no" {% if filters.required == 'no' %}selected{% endif %}>No</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <label class="form-label fw-bold small text-muted">Visible</label>
+                <select class="form-select" id="filterVisible">
+                    <option value="">All</option>
+                    <option value="yes" {% if filters.visible == 'yes' %}selected{% endif %}>Yes</option>
+                    <option value="no" {% if filters.visible == 'no' %}selected{% endif %}>No</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <label class="form-label fw-bold small text-muted">Active</label>
+                <select class="form-select" id="filterActive">
+                    <option value="">All</option>
+                    <option value="yes" {% if filters.active == 'yes' %}selected{% endif %}>Yes</option>
+                    <option value="no" {% if filters.active == 'no' %}selected{% endif %}>No</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button class="btn btn-primary w-100" onclick="applyFilters()"><span class="material-icons-round align-middle me-1" style="font-size:1rem;">search</span> Apply</button>
+                <a href="{% url 'form_builder' %}" class="btn btn-outline-secondary w-100">Reset</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="text-muted small">
+        <strong>{{ active_fields }}</strong> active fields · <strong>{{ total_fields }}</strong> total
+    </div>
+    {% if can_change %}
+    <form method="post" action="{% url 'form_builder_bulk' %}" id="bulkForm" onsubmit="return confirmBulk()">
+        {% csrf_token %}
+        <input type="hidden" name="confirm" value="0" id="bulkConfirm">
+        <div class="d-flex gap-2">
+            <select class="form-select" name="bulk_action" id="bulkAction" style="min-width: 200px;">
+                <option value="">Bulk Actions...</option>
+                <option value="make_required">Make Required</option>
+                <option value="make_optional">Make Optional</option>
+                <option value="show">Show</option>
+                <option value="hide">Hide</option>
+                <option value="activate">Activate</option>
+                <option value="deactivate">Deactivate</option>
+            </select>
+            <button class="btn btn-outline-secondary" type="submit">Apply</button>
+        </div>
+    </form>
+    {% endif %}
+</div>
+
+{% for group in grouped %}
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-white d-flex align-items-center justify-content-between py-3">
+        <div class="d-flex align-items-center gap-2">
+            <span class="material-icons-round text-secondary">{{ group.section.icon }}</span>
+            <span class="fw-bold">{{ group.section.name }}</span>
+            <span class="badge bg-light text-dark">{{ group.fields|length }} fields</span>
+            {% if not group.section.is_active %}<span class="badge bg-secondary">Section Hidden</span>{% endif %}
+            <button class="btn btn-sm btn-link text-decoration-none" type="button" data-bs-toggle="collapse" data-bs-target="#sec-{{ group.section.id }}" aria-expanded="true">
+                <span class="material-icons-round align-middle" id="icon-sec-{{ group.section.id }}">expand_less</span>
+            </button>
+        </div>
+        {% if can_change %}
+        <div class="d-flex align-items-center gap-2">
+            <form method="post" action="{% url 'form_builder_section_save' group.section.id %}" class="d-flex gap-1 align-items-center">
+                {% csrf_token %}
+                <input type="hidden" name="name" value="{{ group.section.name }}">
+                <input type="hidden" name="description" value="{{ group.section.description }}">
+                <input type="hidden" name="icon" value="{{ group.section.icon }}">
+                <input type="number" class="form-control form-control-sm" style="width:70px" name="display_order" value="{{ group.section.display_order }}" title="Section order">
+                <label class="form-check-label small me-1 ms-1 mb-0"><input class="form-check-input me-1" type="checkbox" name="is_active" {% if group.section.is_active %}checked{% endif %} onchange="this.form.submit()"> Active</label>
+                <button class="btn btn-sm btn-outline-secondary" type="submit">Save</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+    <div class="collapse show" id="sec-{{ group.section.id }}">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        {% if can_change %}<th style="width:40px"><input type="checkbox" class="form-check-input section-check" data-section="{{ group.section.id }}"></th>{% endif %}
+                        <th>#</th>
+                        <th>Field</th>
+                        <th>Field Name</th>
+                        <th>Type</th>
+                        <th>Required</th>
+                        <th>Visible</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for field in group.fields %}
+                    <tr>
+                        {% if can_change %}<td><input type="checkbox" class="form-check-input field-check" name="field_ids" value="{{ field.id }}" form="bulkForm"></td>{% endif %}
+                        <td class="text-muted">{{ field.display_order }}</td>
+                        <td>
+                            <div class="fw-semibold">{{ field.label }}{% if field.required %} <span class="text-danger">*</span>{% endif %}</div>
+                            <div class="text-muted small">{% if field.placeholder %}<em>{{ field.placeholder }}</em>{% endif %}</div>
+                        </td>
+                        <td><code>{{ field.field_name }}</code></td>
+                        <td><span class="badge bg-info-subtle text-dark">{{ field.get_field_type_display }}</span></td>
+                        <td>{% if field.required %}<span class="badge bg-danger">Yes</span>{% else %}<span class="badge bg-light text-muted">No</span>{% endif %}</td>
+                        <td>{% if field.visible %}<span class="badge bg-success">Yes</span>{% else %}<span class="badge bg-light text-muted">Hidden</span>{% endif %}</td>
+                        <td>{% if field.is_active %}<span class="badge bg-primary">Active</span>{% else %}<span class="badge bg-secondary">Inactive</span>{% endif %}</td>
+                        <td class="text-end text-nowrap">
+                            <a href="{% url 'form_builder_edit' field.id %}" class="btn btn-sm btn-outline-primary" title="Edit">Edit</a>
+                            {% if can_change %}
+                            <a href="{% url 'form_builder_field_move' field.id 'up' %}" class="btn btn-sm btn-outline-secondary" title="Move Up"><span class="material-icons-round align-middle" style="font-size:1rem;">arrow_upward</span></a>
+                            <a href="{% url 'form_builder_field_move' field.id 'down' %}" class="btn btn-sm btn-outline-secondary" title="Move Down"><span class="material-icons-round align-middle" style="font-size:1rem;">arrow_downward</span></a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="{% if can_change %}9{% else %}8{% endif %}" class="text-center text-muted py-4">No fields match the current filters.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% empty %}
+<div class="alert alert-info">No form sections configured yet.</div>
+{% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function applyFilters() {
+        const params = new URLSearchParams();
+        const q = document.getElementById('searchBox').value.trim();
+        if (q) params.set('q', q);
+        const pairs = [
+            ['section', 'filterSection'], ['type', 'filterType'],
+            ['required', 'filterRequired'], ['visible', 'filterVisible'], ['active', 'filterActive']
+        ];
+        pairs.forEach(([k, id]) => { const v = document.getElementById(id).value; if (v) params.set(k, v); });
+        window.location.href = "{% url 'form_builder' %}?" + params.toString();
+    }
+    function confirmBulk() {
+        const action = document.getElementById('bulkAction').value;
+        const checked = document.querySelectorAll('.field-check:checked').length;
+        if (!action) { alert('Select a bulk action.'); return false; }
+        if (!checked) { alert('Select at least one field.'); return false; }
+        if (!confirm(`Apply "${action}" to ${checked} field(s)? This will apply immediately.`)) return false;
+        document.getElementById('bulkConfirm').value = '1';
+        return true;
+    }
+    document.querySelectorAll('.section-check').forEach(cb => {
+        cb.addEventListener('change', () => {
+            const sec = cb.dataset.section;
+            const box = document.getElementById('sec-' + sec);
+            box.querySelectorAll('.field-check').forEach(f => f.checked = cb.checked);
+        });
+    });
+    document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const target = btn.getAttribute('data-bs-target');
+            const icon = document.getElementById('icon-' + target.replace('#sec-', 'sec-'));
+            if (icon) icon.textContent = icon.textContent === 'expand_less' ? 'expand_more' : 'expand_less';
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "admin/base_site.html" %}
+{% block title %}View selected applications | CSC Admin{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <h1>{{ applications.count }} selected application(s)</h1>
+    <div>
+        <button type="button" class="button" onclick="window.print()" style="margin-right:8px;">Print</button>
+        <a href="{% url 'admin:registrations_studentapplication_changelist' %}" class="button">Back to list</a>
+    </div>
+</div>
+
+<table style="width:100%; border-collapse:collapse;">
+    <thead>
+        <tr>
+            <th style="border:1px solid #ddd; padding:6px;">App No</th>
+            <th style="border:1px solid #ddd; padding:6px;">Name</th>
+            <th style="border:1px solid #ddd; padding:6px;">Mobile</th>
+            <th style="border:1px solid #ddd; padding:6px;">Email</th>
+            <th style="border:1px solid #ddd; padding:6px;">Status</th>
+            <th style="border:1px solid #ddd; padding:6px;">Verification</th>
+            <th style="border:1px solid #ddd; padding:6px;">Training Partner / Batch</th>
+            <th style="border:1px solid #ddd; padding:6px;">Documents</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for app in applications %}
+        <tr>
+            <td style="border:1px solid #ddd; padding:6px;">
+                <a href="{% url 'admin:registrations_studentapplication_change' app.pk %}">{{ app.application_number }}</a>
+            </td>
+            <td style="border:1px solid #ddd; padding:6px;">{{ app.full_name }}</td>
+            <td style="border:1px solid #ddd; padding:6px;">{{ app.mobile_number }}</td>
+            <td style="border:1px solid #ddd; padding:6px;">{{ app.email|default:"-" }}</td>
+            <td style="border:1px solid #ddd; padding:6px;">{{ app.status.name|default:"UNKNOWN" }}</td>
+            <td style="border:1px solid #ddd; padding:6px;">{{ app.verification_status.name|default:"-" }}</td>
+            <td style="border:1px solid #ddd; padding:6px;">{{ app.training_partner.name|default:"-" }}{% if app.batch_code %} / {{ app.batch_code }}{% endif %}</td>
+            <td style="border:1px solid #ddd; padding:6px;">
+                {% for doc in app.documents.all %}
+                    <a href="{{ doc.original_file.url }}" target="_blank" rel="noopener">{{ doc.doc_type_display }}</a>{% if not forloop.last %}, {% endif %}
+                {% empty %}
+                    -
+                {% endfor %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" style="padding:12px;">No applications selected.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

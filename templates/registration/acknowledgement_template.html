@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Acknowledgement Card</title>
+    <style>
+        @page {
+            size: a4 portrait;
+            margin: 2cm;
+        }
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 12pt;
+            color: #333333;
+        }
+        .card-container {
+            border: 2px solid #0056b3;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .header-table {
+            width: 100%;
+            border-bottom: 2px solid #0056b3;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .header-text {
+            text-align: center;
+        }
+        .header-text h1 {
+            color: #0056b3;
+            margin: 0;
+            font-size: 24pt;
+        }
+        .header-text p {
+            margin: 5px 0 0 0;
+            font-size: 12pt;
+            color: #666;
+        }
+        .content-table {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .content-table td {
+            padding: 8px;
+            vertical-align: top;
+        }
+        .label {
+            font-weight: bold;
+            color: #555;
+            width: 35%;
+        }
+        .value {
+            color: #000;
+            width: 65%;
+        }
+        .photo-cell {
+            text-align: right;
+            vertical-align: top;
+            width: 150px;
+        }
+        .photo-box {
+            border: 1px solid #ccc;
+            width: 132px;
+            height: 170px;
+            margin-left: auto;
+        }
+        .qr-box {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .qr-code {
+            width: 100px;
+            height: 100px;
+        }
+        .footer {
+            text-align: center;
+            font-size: 10pt;
+            color: #888;
+            margin-top: 30px;
+            border-top: 1px dashed #ccc;
+            padding-top: 10px;
+        }
+        .success-banner {
+            background-color: #d4edda;
+            color: #155724;
+            text-align: center;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-weight: bold;
+            border: 1px solid #c3e6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="card-container">
+        <table class="header-table">
+            <tr>
+                <td class="header-text">
+                    <h1>{{ platform_settings.organization_name|default:'Council for Skills and Competencies' }}</h1>
+                    <p>National Institute of Electronics & Information Technology</p>
+                    <p>{{ platform_settings.portal_name|default:'Student Registration Portal' }}</p>
+                </td>
+            </tr>
+        </table>
+
+        <div class="success-banner">
+            Application Submitted Successfully
+        </div>
+
+        <table style="width: 100%;">
+            <tr>
+                <td style="width: 70%; vertical-align: top;">
+                    <table class="content-table">
+                        <tr>
+                            <td class="label">Application Number:</td>
+                            <td class="value" style="font-size: 14pt; color: #0056b3; font-weight: bold;">{{ app.application_number }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Student Name:</td>
+                            <td class="value">{{ app.full_name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Program Name:</td>
+                            <td class="value">{{ app.program_opting.name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Mobile Number:</td>
+                            <td class="value">{{ app.mobile_number }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Aadhaar Number:</td>
+                            <td class="value">********{{ app.aadhaar_number|slice:"-4:" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Date & Time:</td>
+                            <td class="value">{{ app.submission_date|date:"F j, Y, h:i A" }}</td>
+                        </tr>
+                    </table>
+                </td>
+                <td class="photo-cell">
+                    {% if passport_path %}
+                        <img class="photo-box" src="{{ passport_path }}" alt="Passport Photo">
+                    {% else %}
+                        <div class="photo-box" style="display:inline-block; line-height: 170px; text-align: center; color: #aaa;">No Photo</div>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+        
+        <div class="qr-box">
+            <img class="qr-code" src="{{ qr_code }}" alt="QR Code">
+        </div>
+
+        <div class="footer">
+            This is a computer generated document. No signature is required.<br>
+            Please keep your Application Number secure for future reference.
+        </div>
+    </div>
+</body>
+</html>
+

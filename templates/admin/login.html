@@ -1,0 +1,144 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}Admin Login | {{ platform_settings.organization_name|default:'Council for Skills and Competencies' }} Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #f4f6f9;
+        /* Optional: Add a subtle patterned background for a premium feel */
+        background-image: radial-gradient(#d1d5db 1px, transparent 1px);
+        background-size: 20px 20px;
+    }
+    .login-card {
+        border-radius: 1.5rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        border: none;
+        overflow: hidden;
+    }
+    .login-logo-chip {
+        display: inline-block;
+        background: #ffffff;
+        padding: 10px 16px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        margin-bottom: 1.25rem;
+    }
+    .login-logo-img {
+        display: block;
+        width: auto;
+        max-width: 110px;
+        height: auto;
+        object-fit: contain;
+        margin: 0 auto;
+    }
+    @media (max-width: 575.98px) {
+        .login-logo-img {
+            max-width: 96px;
+        }
+    }
+    .login-header {
+        background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+        padding: 3rem 2rem;
+        text-align: center;
+        color: white;
+    }
+    .login-body {
+        padding: 3rem;
+        background: white;
+    }
+    .form-floating > label {
+        color: #6c757d;
+    }
+    .form-control:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    }
+    .btn-login {
+        padding: 1rem;
+        font-weight: 700;
+        font-size: 1.1rem;
+        border-radius: 50rem;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn-login:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(13, 110, 253, 0.3);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card login-card">
+                
+                <div class="login-header">
+                    <span class="login-logo-chip">
+                        {% if platform_settings.logo %}
+                        <img src="{{ platform_settings.logo.url }}" alt="Council for Skills and Competencies" class="login-logo-img">
+                        {% else %}
+                        <img src="{% static 'images/logo/csc-logo.jpeg' %}" alt="Council for Skills and Competencies" class="login-logo-img">
+                        {% endif %}
+                    </span>
+                    <h3 class="fw-bold mb-0">Secure Admin Access</h3>
+                    <p class="text-white-50 mt-2 mb-0">{{ platform_settings.organization_name|default:'Council for Skills and Competencies' }} Enterprise Dashboard</p>
+                </div>
+                
+                <div class="login-body">
+                    {% if form.errors and not form.non_field_errors %}
+                    <div class="alert alert-danger rounded-3 p-3 mb-4 d-flex align-items-center">
+                        <span class="material-icons-round me-2">error_outline</span>
+                        <small>Please correct the errors below.</small>
+                    </div>
+                    {% endif %}
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger rounded-3 p-3 mb-4 d-flex align-items-center">
+                        <span class="material-icons-round me-2">gpp_bad</span>
+                        <small>{{ form.non_field_errors|striptags }}</small>
+                    </div>
+                    {% endif %}
+
+                    {% if user.is_authenticated %}
+                    <div class="alert alert-info rounded-3 p-3 mb-4 d-flex align-items-center">
+                        <span class="material-icons-round me-2">info</span>
+                        <small>You are authenticated as {{ user.username }}, but are not authorized to access this page.</small>
+                    </div>
+                    {% endif %}
+
+                    <form action="{{ app_path }}" method="post" id="login-form">
+                        {% csrf_token %}
+                        
+                        <div class="form-floating mb-4">
+                            <input type="text" name="username" class="form-control" id="id_username" placeholder="Username" required autofocus>
+                            <label for="id_username"><span class="material-icons-round align-middle me-1 fs-6">person</span> Username</label>
+                        </div>
+                        
+                        <div class="form-floating mb-4">
+                            <input type="password" name="password" class="form-control" id="id_password" placeholder="Password" required>
+                            <label for="id_password"><span class="material-icons-round align-middle me-1 fs-6">lock</span> Password</label>
+                            <input type="hidden" name="next" value="{{ next }}">
+                        </div>
+                        
+                        <div class="d-grid mt-5">
+                            <button type="submit" class="btn btn-primary btn-login d-flex align-items-center justify-content-center">
+                                <span class="material-icons-round me-2">login</span> Sign In to Dashboard
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <!-- Strictly NO "Create Account" option as requested -->
+                    <div class="text-center mt-4">
+                        <small class="text-muted"><span class="material-icons-round align-middle fs-6 me-1">verified_user</span> Authorized Personnel Only</small>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

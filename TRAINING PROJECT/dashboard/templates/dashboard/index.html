@@ -1,0 +1,326 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Enterprise Dashboard | Council for Skills and Competencies{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border-radius: 1rem;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+        background: white;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    .icon-box {
+        width: 60px;
+        height: 60px;
+        border-radius: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .bg-light-primary { background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; }
+    .bg-light-success { background-color: rgba(25, 135, 84, 0.1); color: #198754; }
+    .bg-light-warning { background-color: rgba(255, 193, 7, 0.1); color: #ffc107; }
+    .bg-light-danger { background-color: rgba(220, 53, 69, 0.1); color: #dc3545; }
+    .bg-light-info { background-color: rgba(13, 202, 240, 0.1); color: #0dcaf0; }
+    .bg-light-purple { background-color: rgba(111, 66, 193, 0.1); color: #6f42c1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <div>
+        <h1 class="h2 fw-bold text-dark mb-0">System Overview</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mt-2 mb-0">
+                <li class="breadcrumb-item"><a href="#">Admin</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+            </ol>
+        </nav>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="btn-toolbar mb-2 mb-md-0 gap-2">
+        <a href="/admin/" target="_blank" class="btn btn-sm btn-outline-danger fw-bold d-flex align-items-center">
+            <span class="material-icons-round fs-6 me-1">code</span> Classic Admin
+        </a>
+        <a href="{% url 'registration' %}" class="btn btn-sm btn-outline-primary fw-bold d-flex align-items-center">
+            <span class="material-icons-round fs-6 me-1">add</span> New Application
+        </a>
+        <div class="dropdown">
+            <button class="btn btn-sm btn-primary fw-bold dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown">
+                <span class="material-icons-round fs-6 me-1">cloud_download</span> Quick Export
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow">
+                <li><a class="dropdown-item d-flex align-items-center" href="{% url 'export_csv' %}"><span class="material-icons-round me-2 fs-6 text-success">table_view</span> Export Applications CSV</a></li>
+                <li><a class="dropdown-item d-flex align-items-center" href="{% url 'export_db' %}"><span class="material-icons-round me-2 fs-6 text-danger">storage</span> Download Database Backup</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Primary Application Metrics -->
+<h5 class="fw-bold text-muted mb-3 mt-4">Application Lifecycle</h5>
+<div class="dashboard-cards mb-5">
+    <div class="dashboard-card">
+        <div class="card stat-card p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase fw-bold mb-2">Total Applications</h6>
+                    <h2 class="fw-bold mb-0">{{ metrics.total_apps }}</h2>
+                    <small class="text-success fw-bold"><span class="material-icons-round fs-6 align-middle">trending_up</span> Live data</small>
+                </div>
+                <div class="icon-box bg-light-primary">
+                    <span class="material-icons-round fs-2">folder_special</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="dashboard-card">
+        <div class="card stat-card p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase fw-bold mb-2">Pending Review</h6>
+                    <h2 class="fw-bold mb-0">{{ metrics.pending_apps }}</h2>
+                    <small class="text-warning fw-bold"><span class="material-icons-round fs-6 align-middle">schedule</span> Requires attention</small>
+                </div>
+                <div class="icon-box bg-light-warning">
+                    <span class="material-icons-round fs-2">hourglass_empty</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="dashboard-card">
+        <div class="card stat-card p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase fw-bold mb-2">Approved</h6>
+                    <h2 class="fw-bold mb-0">{{ metrics.approved_apps }}</h2>
+                    <small class="text-success fw-bold"><span class="material-icons-round fs-6 align-middle">check_circle</span> Approved by staff</small>
+                </div>
+                <div class="icon-box bg-light-success">
+                    <span class="material-icons-round fs-2">verified</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="dashboard-card">
+        <div class="card stat-card p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase fw-bold mb-2">Rejected</h6>
+                    <h2 class="fw-bold mb-0">{{ metrics.rejected_apps }}</h2>
+                    <small class="text-danger fw-bold"><span class="material-icons-round fs-6 align-middle">error</span> Needs correction</small>
+                </div>
+                <div class="icon-box bg-light-danger">
+                    <span class="material-icons-round fs-2">cancel</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Secondary Demographics & Regional Metrics -->
+<h5 class="fw-bold text-muted mb-3">Demographics & Reach</h5>
+<div class="row g-4 mb-5">
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card stat-card p-3 text-center">
+            <span class="material-icons-round text-primary fs-1 mb-2">man</span>
+            <h4 class="fw-bold mb-0">{{ metrics.male_count }}</h4>
+            <small class="text-muted fw-bold text-uppercase">Male</small>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card stat-card p-3 text-center">
+            <span class="material-icons-round text-primary fs-1 mb-2">woman</span>
+            <h4 class="fw-bold mb-0">{{ metrics.female_count }}</h4>
+            <small class="text-muted fw-bold text-uppercase">Female</small>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card stat-card p-3 text-center">
+            <span class="material-icons-round text-info fs-1 mb-2">map</span>
+            <h4 class="fw-bold mb-0">{{ metrics.total_states }}</h4>
+            <small class="text-muted fw-bold text-uppercase">States</small>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card stat-card p-3 text-center">
+            <span class="material-icons-round text-info fs-1 mb-2">location_city</span>
+            <h4 class="fw-bold mb-0">{{ metrics.total_districts }}</h4>
+            <small class="text-muted fw-bold text-uppercase">Districts</small>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card stat-card p-3 text-center">
+            <span class="material-icons-round text-purple fs-1 mb-2">account_balance</span>
+            <h4 class="fw-bold mb-0">{{ metrics.total_institutions }}</h4>
+            <small class="text-muted fw-bold text-uppercase">Institutions</small>
+        </div>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <div class="card stat-card p-3 text-center">
+            <span class="material-icons-round text-purple fs-1 mb-2">library_books</span>
+            <h4 class="fw-bold mb-0">{{ metrics.total_programs }}</h4>
+            <small class="text-muted fw-bold text-uppercase">Programs</small>
+        </div>
+    </div>
+</div>
+
+<!-- Interactive Charts (Chart.js) -->
+<h5 class="fw-bold text-muted mb-3 mt-4">Data Visualization</h5>
+<div class="row g-4 mb-5">
+    <!-- Demographics Donut Chart -->
+    <div class="col-md-5">
+        <div class="card stat-card p-4 h-100">
+            <h6 class="fw-bold text-uppercase mb-4 text-center">Gender Demographics</h6>
+            <div class="d-flex justify-content-center" style="height: 250px;">
+                <canvas id="genderChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <!-- Application Status Bar Chart -->
+    <div class="col-md-7">
+        <div class="card stat-card p-4 h-100">
+            <h6 class="fw-bold text-uppercase mb-4 text-center">Application Status Pipeline</h6>
+            <div class="d-flex justify-content-center" style="height: 250px;">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Infrastructure & System Health -->
+<h5 class="fw-bold text-muted mb-3">Infrastructure & System Health</h5>
+<div class="row g-4 mb-5">
+    <div class="col-12">
+        <div class="card stat-card p-4 h-100 d-flex justify-content-center">
+            <div class="d-flex justify-content-around text-center">
+                <div>
+                    <h3 class="fw-bold text-dark mb-0">{{ metrics.total_docs }}</h3>
+                    <small class="text-muted fw-bold text-uppercase">Uploaded Documents</small>
+                </div>
+                <div class="border-start"></div>
+                <div>
+                    <h3 class="fw-bold text-dark mb-0">0</h3>
+                    <small class="text-muted fw-bold text-uppercase">System Errors (24h)</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Applications Data Table -->
+<div class="card stat-card mb-5">
+    <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0"><span class="material-icons-round text-primary align-middle me-2">list_alt</span> Recent Applications</h5>
+        <button class="btn btn-sm btn-outline-secondary fw-bold">View All</button>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-muted small">
+                    <tr>
+                        <th class="ps-4">App Number</th>
+                        <th>Student Name</th>
+                        <th>Aadhaar</th>
+                        <th>Program</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in recent_apps %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-primary">{{ app.application_number }}</td>
+                        <td class="fw-bold">{{ app.full_name }}</td>
+                        <td class="font-monospace text-muted">{{ app.aadhaar_number }}</td>
+                        <td>{{ app.program_opting.name|default:"-" }}</td>
+                        <td>{{ app.submission_date|date:"M d, Y" }}</td>
+                        <td>
+                            {% if app.status.code == 'PENDING' %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                            {% elif app.status.code == 'APPROVED' %}
+                            <span class="badge bg-success">Approved</span>
+                            {% else %}
+                            <span class="badge bg-danger">{{ app.status.name }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <a href="{% url 'admin:registrations_studentapplication_change' app.id %}" class="btn btn-sm btn-light text-primary me-1" title="View"><span class="material-icons-round fs-6 align-middle">visibility</span></a>
+                            <button class="btn btn-sm btn-light text-success"><span class="material-icons-round fs-6 align-middle">verified</span></button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="7" class="text-center text-muted py-4">No recent applications found in database.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js and Custom Script -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gender Demographics Chart
+        const genderCtx = document.getElementById('genderChart').getContext('2d');
+        new Chart(genderCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Male', 'Female'],
+                datasets: [{
+                    data: [{{ metrics.male_count }}, {{ metrics.female_count }}],
+                    backgroundColor: ['#0d6efd', '#e83e8c'],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                },
+                cutout: '70%'
+            }
+        });
+
+        // Status Pipeline Chart
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        new Chart(statusCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Pending Review', 'Approved', 'Rejected'],
+                datasets: [{
+                    label: 'Applications',
+                    data: [{{ metrics.pending_apps }}, {{ metrics.approved_apps }}, {{ metrics.rejected_apps }}],
+                    backgroundColor: ['#ffc107', '#198754', '#dc3545'],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, grid: { borderDash: [2, 4] } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}
+
+

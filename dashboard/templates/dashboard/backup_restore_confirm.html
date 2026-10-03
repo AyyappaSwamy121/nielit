@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Restore Backup | Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><span class="material-icons-round align-middle me-2 text-secondary" style="font-size: 1.8rem;">settings_backup_restore</span>Restore Backup</h1>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+    <span class="material-icons-round align-middle me-2" style="font-size: 1.1rem;">info</span>{{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if preview %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white d-flex align-items-center gap-2">
+                <span class="material-icons-round text-warning">warning</span>
+                <span class="fw-bold">Confirm Restoration</span>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <span class="material-icons-round align-middle me-1">dangerous</span>
+                    <strong>This action affects the entire database and stored files.</strong> Restoring will replace the current data with the contents of this backup. It cannot be easily undone (a safety copy of the current database is created first).
+                </div>
+
+                <ul class="list-group list-group-flush mb-4">
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span class="text-muted">Backup ID</span>
+                        <span class="fw-bold">{{ preview.display_id }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span class="text-muted">Type</span>
+                        <span class="fw-bold">{{ preview.backup_type }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span class="text-muted">File</span>
+                        <span class="fw-bold small text-break">{{ preview.filename }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span class="text-muted">Size</span>
+                        <span class="fw-bold">{{ preview.size }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span class="text-muted">Created</span>
+                        <span class="fw-bold">{{ preview.created_at|date:"d M Y H:i" }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span class="text-muted">Created By</span>
+                        <span class="fw-bold">{{ preview.created_by }}</span>
+                    </li>
+                </ul>
+
+                <form method="post" action="{% url 'backup_restore_execute' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="backup_id" value="{{ job.id }}">
+                    <div class="form-check mb-4">
+                        <input class="form-check-input" type="checkbox" id="confirm_restore" name="confirm_restore" required>
+                        <label class="form-check-label fw-semibold" for="confirm_restore">
+                            I understand this will replace the current {{ preview.backup_type }} data and I want to continue.
+                        </label>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-danger rounded-pill px-4">
+                            <span class="material-icons-round align-middle me-1" style="font-size: 1.1rem;">settings_backup_restore</span>Yes, Restore Now
+                        </button>
+                        <a href="{% url 'backup_center' %}" class="btn btn-outline-secondary rounded-pill px-4">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="row justify-content-center">
+    <div class="col-lg-6 text-center">
+        <span class="material-icons-round text-muted display-1 mb-3">settings_backup_restore</span>
+        <h3 class="fw-bold text-dark">No backup selected</h3>
+        <p class="text-muted">Go back to the Backup &amp; Restore center and choose a backup or upload a file.</p>
+        <a href="{% url 'backup_center' %}" class="btn btn-primary rounded-pill px-4">
+            <span class="material-icons-round align-middle me-1" style="font-size: 1.1rem;">arrow_back</span>Back to Backup Center
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

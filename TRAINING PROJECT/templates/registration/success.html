@@ -1,0 +1,270 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}Application Successful | Council for Skills and Competencies{% endblock %}
+{% block robots %}noindex,nofollow,noarchive,nosnippet,noimageindex{% endblock %}
+
+{% block extra_css %}
+<style>
+    body { background-color: #f8f9fa; }
+    
+    .ack-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border: 2px solid #0056b3;
+        overflow: hidden;
+        margin-bottom: 2rem;
+        padding: 30px;
+        position: relative;
+    }
+    
+    .ack-header {
+        border-bottom: 2px solid #0056b3;
+        padding-bottom: 20px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    .ack-header h2 {
+        color: #0056b3;
+        font-weight: 700;
+        margin: 0;
+    }
+    
+    .ack-body .data-label {
+        font-weight: 600;
+        color: #6c757d;
+    }
+    
+    .ack-body .data-value {
+        font-weight: 700;
+        color: #212529;
+        font-size: 1.1rem;
+    }
+    
+    .success-icon {
+        font-size: 4rem;
+        color: #28a745;
+        margin-bottom: 10px;
+    }
+    
+    .action-bar {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+
+    /* Print Styles */
+    @media print {
+        body {
+            background-color: #fff;
+        }
+        .navbar, .footer, .action-bar, .print-hide {
+            display: none !important;
+        }
+        .ack-card {
+            box-shadow: none;
+            border: 2px solid #000;
+            width: 100%;
+            margin: 0;
+            padding: 20px;
+        }
+        .ack-header h2 {
+            color: #000 !important;
+        }
+        .container {
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4 mb-5">
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            
+            <div class="action-bar d-flex flex-wrap justify-content-center gap-3">
+                <button onclick="window.print()" class="btn btn-primary d-flex align-items-center">
+                    <span class="material-icons-round me-2">print</span> Print
+                </button>
+                
+                {% if data.png_url %}
+                <a href="{{ data.png_url }}" download class="btn btn-outline-success d-flex align-items-center">
+                    <span class="material-icons-round me-2">download</span> Download PNG
+                </a>
+                {% endif %}
+                
+                {% if data.jpg_url %}
+                <a href="{{ data.jpg_url }}" download class="btn btn-outline-success d-flex align-items-center">
+                    <span class="material-icons-round me-2">download</span> Download JPG
+                </a>
+                {% endif %}
+                
+                {% if data.pdf_url %}
+                <a href="{{ data.pdf_url }}" download class="btn btn-outline-danger d-flex align-items-center">
+                    <span class="material-icons-round me-2">picture_as_pdf</span> Download PDF
+                </a>
+                {% endif %}
+                
+                <button onclick="navigator.clipboard.writeText('{{ data.app_no }}'); alert('Application Number copied to clipboard!');" class="btn btn-outline-secondary d-flex align-items-center">
+                    <span class="material-icons-round me-2">content_copy</span> Copy Application Number
+                </button>
+                
+                <a href="{% url 'registration' %}" class="btn btn-secondary d-flex align-items-center">
+                    <span class="material-icons-round me-2">home</span> Return Home
+                </a>
+            </div>
+
+            <!-- The Acknowledgement Card to be Printed -->
+            <div class="ack-card">
+                <div class="ack-header">
+                    <h2>Council for Skills and Competencies</h2>
+                    <p class="mb-0 text-muted">National Institute of Electronics & Information Technology</p>
+                    <p class="mb-0 text-muted">Student Registration Portal</p>
+                </div>
+                
+                <div class="text-center mb-4">
+                    <span class="material-icons-round success-icon">check_circle</span>
+                    <h4 class="text-success fw-bold">Application Submitted Successfully</h4>
+                </div>
+                
+                <div class="ack-body row">
+                    <div class="col-sm-8">
+                        <div class="row mb-3">
+                            <div class="col-sm-5 data-label">Application Number:</div>
+                            <div class="col-sm-7 data-value text-primary fs-4">{{ data.app_no }}</div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-5 data-label">Student Name:</div>
+                            <div class="col-sm-7 data-value">{{ data.name }}</div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-5 data-label">Date & Time:</div>
+                            <div class="col-sm-7 data-value">{{ data.date }}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-sm-4 text-center">
+                        <p class="text-muted small mb-1">Scan to Verify</p>
+                        <!-- For the web preview, we just show a placeholder or regenerate QR if needed. 
+                             But since we have the PDF, the user can just download it. We will display a generic QR code or simple text here. -->
+                        <span class="material-icons-round" style="font-size: 5rem; color: #555;">qr_code_2</span>
+                    </div>
+                </div>
+                
+                <div class="text-center mt-4 pt-3 border-top border-dashed text-muted small">
+                    This is a computer generated document. No signature is required.<br>
+                    Please keep your Application Number secure for future reference.
+                </div>
+            </div>
+
+            <!-- PROCESSED DOCUMENTS SECTION -->
+            <div class="processed-docs-card mt-4 print-hide" style="background: #fff; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); padding: 30px;">
+                <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                    <div>
+                        <h4 class="text-primary fw-bold mb-1">PROCESSED DOCUMENTS</h4>
+                        <p class="text-muted mb-0">Your uploaded documents have been successfully processed.<br>Download the optimized files below.</p>
+                    </div>
+                    <div>
+                        <a href="{% url 'download_all_documents' auth_token %}" class="btn btn-primary d-flex align-items-center">
+                            <span class="material-icons-round me-2">archive</span> Download All Processed Files
+                        </a>
+                    </div>
+                </div>
+
+                {% if documents %}
+                <!-- Desktop Table -->
+                <div class="table-responsive d-none d-md-block">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Document</th>
+                                <th>Processed Filename</th>
+                                <th>Size</th>
+                                <th>Dimensions</th>
+                                <th>DPI</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for doc in documents %}
+                            <tr>
+                                <td class="fw-bold">{{ doc.doc_type_display }}</td>
+                                <td style="overflow-wrap: anywhere; word-break: break-word;">{{ doc.compressed_filename|default:doc.original_filename }}</td>
+                                <td>{% if doc.compressed_size_kb %}{{ doc.compressed_size_kb }} KB{% elif doc.optimized_size_kb %}{{ doc.optimized_size_kb }} KB{% else %}-{% endif %}</td>
+                                <td>{% if doc.image_width and doc.image_height %}{{ doc.image_width }}×{{ doc.image_height }}{% else %}—{% endif %}</td>
+                                <td>{% if doc.actual_dpi %}{{ doc.actual_dpi }}{% else %}—{% endif %}</td>
+                                <td class="text-success fw-bold"><span class="material-icons-round align-middle" style="font-size: 1rem;">check_circle</span> Ready</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'download_document' auth_token doc.id %}?view=1" target="_blank" class="btn btn-outline-primary" title="Preview/View">
+                                            {% if doc.mime_type == 'application/pdf' or '.pdf' in doc.compressed_filename %}View PDF{% else %}Preview{% endif %}
+                                        </a>
+                                        <a href="{% url 'download_document' auth_token doc.id %}" class="btn btn-outline-success" title="Download">
+                                            Download
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile Cards -->
+                <div class="d-block d-md-none">
+                    {% for doc in documents %}
+                    <div class="card mb-3 shadow-sm border-0">
+                        <div class="card-header bg-light fw-bold text-uppercase">
+                            {{ doc.doc_type_display }}
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-2">
+                                <div class="col-12 text-muted small">Processed File</div>
+                                <div class="col-12 fw-bold" style="overflow-wrap: anywhere; word-break: break-word;">{{ doc.compressed_filename|default:doc.original_filename }}</div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-12 text-muted small">Original File</div>
+                                <div class="col-12" style="overflow-wrap: anywhere; word-break: break-word;">{{ doc.original_filename }}</div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <div class="text-muted small">Size</div>
+                                    <div class="fw-bold">{% if doc.compressed_size_kb %}{{ doc.compressed_size_kb }} KB{% elif doc.optimized_size_kb %}{{ doc.optimized_size_kb }} KB{% else %}-{% endif %}</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="text-muted small">Status</div>
+                                    <div class="text-success fw-bold"><span class="material-icons-round align-middle" style="font-size: 1rem;">check_circle</span> Ready</div>
+                                </div>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <a href="{% url 'download_document' auth_token doc.id %}?view=1" target="_blank" class="btn btn-outline-primary">
+                                    {% if doc.mime_type == 'application/pdf' or '.pdf' in doc.compressed_filename %}View PDF{% else %}Preview{% endif %}
+                                </a>
+                                <a href="{% url 'download_document' auth_token doc.id %}" class="btn btn-success">
+                                    Download
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            <!-- END PROCESSED DOCUMENTS SECTION -->
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

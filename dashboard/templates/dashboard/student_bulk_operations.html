@@ -1,0 +1,655 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Bulk Operations | Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sel-col { width: 50px; min-width: 50px; text-align: center; }
+    .sel-col input { cursor: pointer; }
+    tr.row-selected td { background-color: rgba(13, 110, 253, 0.08) !important; }
+    .bulk-toolbar {
+        position: sticky;
+        top: 66px;
+        z-index: 1020;
+        background-color: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.05);
+    }
+    @media (max-width: 767.98px) { .bulk-toolbar { top: 60px; } }
+    .applications-table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .applications-table { width: max-content; min-width: 100%; border-collapse: collapse; }
+    .applications-table thead th { position: sticky; top: 0; z-index: 5; white-space: nowrap; }
+    .applications-table tbody td { vertical-align: middle; white-space: normal; overflow-wrap: break-word; }
+    .applications-table .cell-nowrap { white-space: nowrap; }
+    .applications-table .col-appno { min-width: 150px; }
+    .applications-table .col-name { min-width: 180px; }
+    .applications-table .col-mobile { min-width: 130px; }
+    .applications-table .col-email { min-width: 220px; }
+    .applications-table .col-program { min-width: 220px; }
+    .applications-table .col-appstatus { min-width: 160px; }
+    .applications-table .col-actions { width: 120px; min-width: 120px; }
+    .applications-table .status-badge { white-space: nowrap; }
+    .op-panel { display: none; }
+    .op-panel.active { display: block; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Bulk Operations</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'student_directory' %}" class="btn btn-sm btn-outline-secondary"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">people</span>Student Directory</a>
+        <a href="{% url 'student_advanced_search' %}" class="btn btn-sm btn-outline-secondary ms-2"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">search</span>Advanced Search</a>
+    </div>
+</div>
+
+<!-- Search Filter -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{% url 'student_bulk_operations' %}">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" value="{{ current_search }}" placeholder="Search App No, Name, Mobile, Aadhaar, Email...">
+                </div>
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Status</label>
+                    <select id="status" name="status" class="form-select">
+                        <option value="">All</option>
+                        {% for status in statuses %}
+                        <option value="{{ status.value }}" {% if current_status == status.value %}selected{% endif %}>{{ status.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">filter_alt</span>Filter</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Bulk Selection Toolbar -->
+{% csrf_token %}
+<div id="bulkToolbar" class="bulk-toolbar d-none p-2 px-3 mb-3">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <span class="fw-bold" id="selectionCount">0 students selected</span>
+        <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
+            <button type="button" id="clearSelectionBtn" class="btn btn-sm btn-outline-secondary"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">close</span>Clear Selection</button>
+            <button type="button" id="bulkActionsBtn" class="btn btn-sm btn-primary" disabled><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">list_alt</span>Bulk Actions</button>
+        </div>
+    </div>
+</div>
+
+<div id="bulkMessage" class="d-none"></div>
+
+<!-- Result Count -->
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <span class="text-muted small">
+        <span class="material-icons-round align-middle me-1" style="font-size: 1rem;">info</span>
+        {{ total_count }} student{{ total_count|pluralize }} available
+    </span>
+</div>
+
+<!-- Operations Panel (shown after selection) -->
+<div id="operationsPanel" class="card border-primary mb-3 d-none">
+    <div class="card-header bg-primary text-white fw-bold"><span class="material-icons-round align-middle me-1" style="font-size: 1.1rem;">list_alt</span>Choose an Operation <span id="opCountBadge" class="badge bg-white text-primary ms-1"></span></div>
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-2 mb-3">
+            <button type="button" class="btn btn-outline-success op-btn" data-op="export-csv"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">grid_on</span>Export CSV</button>
+            <button type="button" class="btn btn-outline-success op-btn" data-op="export-excel"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">table_chart</span>Export Excel</button>
+            <button type="button" class="btn btn-outline-info op-btn" data-op="download-docs"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">folder_zip</span>Download Documents</button>
+            <button type="button" class="btn btn-outline-info op-btn" data-op="download-compressed"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">folder_zip</span>Download Compressed Files</button>
+            <button type="button" class="btn btn-outline-info op-btn" data-op="download-apps"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">picture_as_pdf</span>Download Applications</button>
+            <button type="button" class="btn btn-outline-primary op-btn" data-op="change-status"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">swap_horiz</span>Change Status</button>
+            <button type="button" class="btn btn-outline-primary op-btn" data-op="assign-partner"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">business</span>Assign Training Partner</button>
+            <button type="button" class="btn btn-outline-primary op-btn" data-op="assign-batch"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">qr_code_2</span>Assign Batch Code</button>
+            <button type="button" class="btn btn-outline-warning op-btn" data-op="request-correction"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">edit_note</span>Request Correction</button>
+            <button type="button" class="btn btn-outline-danger op-btn" data-op="notify"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">email</span>Send Email</button>
+            <button type="button" class="btn btn-outline-secondary op-btn" data-op="print"><span class="material-icons-round align-middle me-1" style="font-size: 1rem;">print</span>Print Selected</button>
+        </div>
+
+        <!-- Change Status -->
+        <div id="op-change-status" class="op-panel row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">New Application Status</label>
+                <select id="opStatusSelect" class="form-select">
+                    <option value="">Select status...</option>
+                    {% for st in application_statuses %}
+                    <option value="{{ st.code }}">{{ st.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2"><button type="button" class="btn btn-primary op-execute" data-op="change-status">Apply to selected</button></div>
+        </div>
+
+        <!-- Assign Training Partner -->
+        <div id="op-assign-partner" class="op-panel row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Training Partner / ATC</label>
+                <select id="opPartnerSelect" class="form-select">
+                    <option value="">Select partner...</option>
+                    {% for tp in training_partners %}
+                    <option value="{{ tp.id }}">{{ tp.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2"><button type="button" class="btn btn-primary op-execute" data-op="assign-partner">Apply to selected</button></div>
+        </div>
+
+        <!-- Assign Batch Code -->
+        <div id="op-assign-batch" class="op-panel row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Training Partner / ATC</label>
+                <select id="opBatchPartnerSelect" class="form-select">
+                    <option value="">All partners...</option>
+                    {% for tp in training_partners %}
+                    <option value="{{ tp.id }}">{{ tp.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Batch Code</label>
+                <select id="opBatchSelect" class="form-select">
+                    <option value="">Select batch code...</option>
+                    {% for bc in batch_codes %}
+                    <option value="{{ bc.code }}" data-partner="{{ bc.training_partner_id }}">{{ bc.code }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2"><button type="button" class="btn btn-primary op-execute" data-op="assign-batch">Apply to selected</button></div>
+        </div>
+
+        <!-- Send Email -->
+        <div id="op-notify" class="op-panel row g-2 align-items-end">
+            <div class="col-md-12">
+                <label class="form-label">Subject</label>
+                <input type="text" id="opNotifySubject" class="form-control" placeholder="Email subject">
+            </div>
+            <div class="col-md-10">
+                <label class="form-label">Message</label>
+                <textarea id="opNotifyMessage" class="form-control" rows="2" placeholder="Message body (sent only to selected students with an email address)"></textarea>
+            </div>
+            <div class="col-md-2"><button type="button" class="btn btn-danger op-execute" data-op="notify">Send</button></div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="applications-table-wrapper">
+    <table class="table table-striped table-hover align-middle applications-table">
+        <thead class="table-dark">
+            <tr>
+                <th scope="col" class="sel-col">
+                    <input class="form-check-input" type="checkbox" id="selectAllCheckbox" title="Select all on this page">
+                </th>
+                <th scope="col" class="col-appno">Application No</th>
+                <th scope="col" class="col-name">Full Name</th>
+                <th scope="col" class="col-mobile">Mobile</th>
+                <th scope="col" class="col-email">Email</th>
+                <th scope="col" class="col-program">Program</th>
+                <th scope="col" class="col-appstatus">Status</th>
+                <th scope="col" class="col-actions">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for app in page_obj %}
+            <tr data-id="{{ app.id }}">
+                <td class="sel-col"><input class="form-check-input application-checkbox" type="checkbox" value="{{ app.id }}"></td>
+                <td class="col-appno cell-nowrap"><strong>{{ app.application_number }}</strong></td>
+                <td class="col-name">{{ app.full_name }}</td>
+                <td class="col-mobile cell-nowrap">{{ app.mobile_number }}</td>
+                <td class="col-email">{{ app.email }}</td>
+                <td class="col-program">{{ app.program_opting.name|default:"-" }}</td>
+                <td class="col-appstatus">
+                    {% if app.is_draft %}<span class="badge bg-info text-dark status-badge">Draft</span>
+                    {% else %}<span class="badge bg-success status-badge">Submitted</span>{% endif %}
+                    {% if app.verification_status.code == 'VERIFIED' %}<span class="badge bg-secondary status-badge">Verified</span>{% endif %}
+                </td>
+                <td class="col-actions">
+                    <a href="{% url 'student_profile' app.id %}" class="btn btn-sm btn-outline-secondary"><span class="material-icons-round align-middle" style="font-size: 1rem;">person</span></a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" class="text-center py-5 text-muted">
+                    <span class="material-icons-round d-block mb-3" style="font-size: 3rem;">inbox</span>
+                    <h5 class="fw-bold text-dark">No students found</h5>
+                    <p class="mb-0">Try adjusting your search or status filter.</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page=1{% if current_search %}&search={{ current_search }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}">&laquo; First</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}">Previous</a></li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">&laquo; First</span></li>
+        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+        {% endif %}
+        <li class="page-item active"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}">Next</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if current_search %}&search={{ current_search }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}">Last &raquo;</a></li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Next</span></li>
+        <li class="page-item disabled"><span class="page-link">Last &raquo;</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+    var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    csrfToken = csrfToken ? csrfToken.value : '';
+
+    var URLS = {
+        'export-csv': '{% url "bulk_export_csv" %}',
+        'export-excel': '{% url "bulk_export_excel" %}',
+        'download-docs': '{% url "bulk_ops_download_documents" %}',
+        'download-compressed': '{% url "bulk_ops_download_compressed_files" %}',
+        'download-apps': '{% url "bulk_ops_download_applications" %}',
+        'change-status': '{% url "bulk_ops_change_status" %}',
+        'assign-partner': '{% url "bulk_ops_assign_training_partner" %}',
+        'assign-batch': '{% url "bulk_ops_assign_batch_code" %}',
+        'request-correction': '{% url "bulk_request_correction" %}',
+        'notify': '{% url "bulk_send_email" %}'
+    };
+    var LOADING_TEXT = {
+        'export-csv': 'Generating CSV...',
+        'export-excel': 'Generating Excel...',
+        'download-docs': 'Preparing documents...',
+        'download-compressed': 'Preparing compressed files...',
+        'download-apps': 'Preparing applications...',
+        'change-status': 'Updating status...',
+        'assign-partner': 'Assigning partner...',
+        'assign-batch': 'Assigning batch...',
+        'request-correction': 'Requesting correction...',
+        'notify': 'Sending emails...'
+    };
+
+    function getSelectedIds() {
+        var ids = [];
+        document.querySelectorAll('.application-checkbox').forEach(function (cb) { if (cb.checked) ids.push(cb.value); });
+        return ids;
+    }
+    function updateUI() {
+        var cbs = document.querySelectorAll('.application-checkbox');
+        var selected = getSelectedIds();
+        var count = selected.length;
+        var total = cbs.length;
+        var toolbar = document.getElementById('bulkToolbar');
+        var panel = document.getElementById('operationsPanel');
+        var opBadge = document.getElementById('opCountBadge');
+        var selectAll = document.getElementById('selectAllCheckbox');
+        var counter = document.getElementById('selectionCount');
+        var bulkBtn = document.getElementById('bulkActionsBtn');
+        cbs.forEach(function (cb) {
+            var row = cb.closest('tr');
+            if (row) row.classList.toggle('row-selected', cb.checked);
+        });
+        if (selectAll) { selectAll.checked = count > 0 && count === total; selectAll.indeterminate = count > 0 && count < total; }
+        if (counter) counter.textContent = count + ' student' + (count === 1 ? '' : 's') + ' selected';
+        if (toolbar) toolbar.classList.toggle('d-none', count === 0);
+        if (bulkBtn) bulkBtn.disabled = count === 0;
+        if (opBadge) opBadge.textContent = count + ' selected';
+    }
+    function showMessage(type, text) {
+        var msg = document.getElementById('bulkMessage');
+        if (!msg) return;
+        var classes = { success: 'alert alert-success alert-dismissible fade show', error: 'alert alert-danger alert-dismissible fade show', warning: 'alert alert-warning alert-dismissible fade show' };
+        msg.className = classes[type] || classes.success;
+        msg.innerHTML = '<span class="material-icons-round align-middle me-2" style="font-size: 1.1rem;">' + (type === 'success' ? 'check_circle' : type === 'error' ? 'error' : 'warning') + '</span>' + text + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+        msg.classList.remove('d-none');
+        msg.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+    function hideMessage() {
+        var msg = document.getElementById('bulkMessage');
+        if (msg) msg.classList.add('d-none');
+    }
+    function postForm(url, ids, extra) {
+        var body = new URLSearchParams();
+        ids.forEach(function (id) { body.append('selected_ids[]', id); });
+        if (extra) {
+            Object.keys(extra).forEach(function (k) { body.append(k, extra[k]); });
+        }
+        return fetch(url, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+            body: body.toString(),
+            credentials: 'same-origin'
+        });
+    }
+    // Reads a JSON error body (or falls back to a generic message) and shows it.
+    function showResponseError(resp, fallback) {
+        var tryText = resp && resp.text ? resp.text() : Promise.resolve('');
+        return Promise.resolve(tryText).then(function (text) {
+            var message = fallback;
+            try {
+                var data = JSON.parse(text);
+                if (data && data.error) message = data.error;
+            } catch (e) {}
+            showMessage('error', message);
+        });
+    }
+    function clearSelection() {
+        document.querySelectorAll('.application-checkbox').forEach(function (cb) { cb.checked = false; });
+        var selectAll = document.getElementById('selectAllCheckbox');
+        if (selectAll) { selectAll.checked = false; selectAll.indeterminate = false; }
+        updateUI();
+    }
+    function downloadBlob(resp, fallbackName) {
+        var disposition = resp.headers.get('Content-Disposition') || '';
+        var match = /filename="?([^"]+)"?/.exec(disposition);
+        var filename = match ? match[1] : fallbackName;
+        return resp.blob().then(function (blob) {
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    }
+    function opPanel(id) {
+        document.querySelectorAll('.op-panel').forEach(function (p) { p.classList.remove('active'); });
+        var panel = document.getElementById(id);
+        if (panel) panel.classList.add('active');
+    }
+    // Disables a button, shows loading text, returns a restore function.
+    function setButtonLoading(btn, loadingText) {
+        var original = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>' + loadingText;
+        return function () {
+            btn.disabled = false;
+            btn.innerHTML = original;
+        };
+    }
+
+    document.querySelectorAll('.application-checkbox').forEach(function (cb) { cb.addEventListener('change', updateUI); });
+    var selectAll = document.getElementById('selectAllCheckbox');
+    if (selectAll) {
+        selectAll.addEventListener('change', function () {
+            document.querySelectorAll('.application-checkbox').forEach(function (cb) { cb.checked = selectAll.checked; });
+            updateUI();
+        });
+    }
+    var clearBtn = document.getElementById('clearSelectionBtn');
+    if (clearBtn) clearBtn.addEventListener('click', clearSelection);
+
+    var bulkBtn = document.getElementById('bulkActionsBtn');
+    if (bulkBtn) {
+        bulkBtn.addEventListener('click', function () {
+            document.getElementById('operationsPanel').classList.remove('d-none');
+            document.getElementById('operationsPanel').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        });
+    }
+
+    // Filter batch-code options by the selected training partner.
+    var batchPartnerSel = document.getElementById('opBatchPartnerSelect');
+    var batchSel = document.getElementById('opBatchSelect');
+    function filterBatchCodes() {
+        if (!batchPartnerSel || !batchSel) return;
+        var partnerId = batchPartnerSel.value;
+        batchSel.querySelectorAll('option[data-partner]').forEach(function (opt) {
+            var show = !partnerId || opt.getAttribute('data-partner') === partnerId;
+            opt.style.display = show ? '' : 'none';
+        });
+        batchSel.value = '';
+    }
+    if (batchPartnerSel) batchPartnerSel.addEventListener('change', filterBatchCodes);
+    filterBatchCodes();
+
+    // Operation buttons: show the relevant input panel (or run immediately for downloads)
+    document.querySelectorAll('.op-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var op = btn.getAttribute('data-op');
+            var ids = getSelectedIds();
+            if (ids.length === 0) { showMessage('error', 'Please select at least one student.'); return; }
+            hideMessage();
+            if (op === 'export-csv' || op === 'export-excel') {
+                var restore = setButtonLoading(btn, LOADING_TEXT[op]);
+                postForm(URLS[op], ids).then(function (resp) {
+                    if (!resp.ok) {
+                        restore();
+                        return showResponseError(resp, 'Export failed. Please try again.');
+                    }
+                    return resp.blob().then(function (blob) {
+                        var disposition = resp.headers.get('Content-Disposition') || '';
+                        var match = /filename="?([^"]+)"?/.exec(disposition);
+                        var filename = match ? match[1] : (op === 'export-excel' ? 'CSC_Selected_Students.xlsx' : 'CSC_Selected_Students.csv');
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement('a');
+                        a.href = url; a.download = filename;
+                        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        restore();
+                        showMessage('success', ids.length + ' student' + (ids.length === 1 ? '' : 's') + ' exported.');
+                    });
+                }).catch(function () {
+                    restore();
+                    showMessage('error', 'Export failed. Please try again.');
+                });
+                return;
+            }
+            if (op === 'download-docs') {
+                var restoreDocs = setButtonLoading(btn, LOADING_TEXT[op]);
+                postForm(URLS[op], ids).then(function (resp) {
+                    if (!resp.ok) {
+                        restoreDocs();
+                        return showResponseError(resp, 'Download failed.');
+                    }
+                    return resp.blob().then(function (blob) {
+                        var disposition = resp.headers.get('Content-Disposition') || '';
+                        var match = /filename="?([^"]+)"?/.exec(disposition);
+                        var filename = match ? match[1] : 'CSC_Selected_Documents.zip';
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement('a');
+                        a.href = url; a.download = filename;
+                        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        restoreDocs();
+                        showMessage('success', 'Documents downloaded.');
+                    });
+                }).catch(function () {
+                    restoreDocs();
+                    showMessage('error', 'Download failed.');
+                });
+                return;
+            }
+            if (op === 'download-compressed') {
+                var restoreComp = setButtonLoading(btn, LOADING_TEXT[op]);
+                postForm(URLS[op], ids).then(function (resp) {
+                    if (!resp.ok) {
+                        restoreComp();
+                        return showResponseError(resp, 'Download failed.');
+                    }
+                    return resp.blob().then(function (blob) {
+                        var disposition = resp.headers.get('Content-Disposition') || '';
+                        var match = /filename="?([^"]+)"?/.exec(disposition);
+                        var filename = match ? match[1] : 'CSC_Selected_Compressed_Documents.zip';
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement('a');
+                        a.href = url; a.download = filename;
+                        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        restoreComp();
+                        showMessage('success', 'Compressed files downloaded.');
+                    });
+                }).catch(function () {
+                    restoreComp();
+                    showMessage('error', 'Download failed.');
+                });
+                return;
+            }
+            if (op === 'download-apps') {
+                var restoreApps = setButtonLoading(btn, LOADING_TEXT[op]);
+                postForm(URLS[op], ids).then(function (resp) {
+                    if (!resp.ok) {
+                        restoreApps();
+                        return showResponseError(resp, 'Download failed.');
+                    }
+                    return resp.blob().then(function (blob) {
+                        var disposition = resp.headers.get('Content-Disposition') || '';
+                        var match = /filename="?([^"]+)"?/.exec(disposition);
+                        var filename = match ? match[1] : 'CSC_Selected_Applications.zip';
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement('a');
+                        a.href = url; a.download = filename;
+                        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        restoreApps();
+                        showMessage('success', 'Applications downloaded.');
+                    });
+                }).catch(function () {
+                    restoreApps();
+                    showMessage('error', 'Download failed.');
+                });
+                return;
+            }
+            if (op === 'request-correction') {
+                var restoreCorr = setButtonLoading(btn, LOADING_TEXT[op]);
+                postForm(URLS[op], ids).then(function (resp) {
+                    if (!resp.ok) {
+                        restoreCorr();
+                        return showResponseError(resp, 'Request failed.');
+                    }
+                    return resp.json().then(function (data) {
+                        restoreCorr();
+                        if (data.error) { showMessage('error', data.error); return; }
+                        var msg = data.processed + ' marked for correction' + (data.skipped ? ', ' + data.skipped + ' skipped' : '.');
+                        showMessage('success', msg);
+                        setTimeout(function () { location.reload(); }, 900);
+                    });
+                }).catch(function () {
+                    restoreCorr();
+                    showMessage('error', 'Request failed.');
+                });
+                return;
+            }
+            if (op === 'print') {
+                window.open('{% url "bulk_print" %}?ids=' + ids.join(','), '_blank');
+                return;
+            }
+            opPanel('op-' + op);
+        });
+    });
+
+    // Execute operations with input panels
+    document.querySelectorAll('.op-execute').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var op = btn.getAttribute('data-op');
+            var ids = getSelectedIds();
+            if (ids.length === 0) { showMessage('error', 'Please select at least one student.'); return; }
+            hideMessage();
+            if (op === 'change-status') {
+                var status = document.getElementById('opStatusSelect').value;
+                if (!status) { showMessage('warning', 'Choose a status first.'); return; }
+                if (!confirm('Change application status for ' + ids.length + ' selected student(s)?')) return;
+                var restoreStatus = setButtonLoading(btn, LOADING_TEXT[op]);
+                postForm(URLS[op], ids, { status: status }).then(function (resp) {
+                    if (!resp.ok) {
+                        restoreStatus();
+                        return showResponseError(resp, 'Status update failed.');
+                    }
+                    return resp.json().then(function (data) {
+                        restoreStatus();
+                        if (data.error) { showMessage('error', data.error); return; }
+                        showMessage('success', data.processed + ' updated to ' + data.status + (data.skipped ? ', ' + data.skipped + ' skipped' : '.'));
+                        setTimeout(function () { location.reload(); }, 900);
+                    });
+                }).catch(function () {
+                    restoreStatus();
+                    showMessage('error', 'Status update failed.');
+                });
+            }
+            if (op === 'assign-partner') {
+                var partner = document.getElementById('opPartnerSelect').value;
+                if (!partner) { showMessage('warning', 'Choose a training partner first.'); return; }
+                if (!confirm('Assign training partner to ' + ids.length + ' selected student(s)?')) return;
+                var restorePartner = setButtonLoading(btn, LOADING_TEXT[op]);
+                postForm(URLS[op], ids, { training_partner: partner }).then(function (resp) {
+                    if (!resp.ok) {
+                        restorePartner();
+                        return showResponseError(resp, 'Partner assignment failed.');
+                    }
+                    return resp.json().then(function (data) {
+                        restorePartner();
+                        if (data.error) { showMessage('error', data.error); return; }
+                        showMessage('success', data.processed + ' assigned to ' + data.training_partner + (data.skipped ? ', ' + data.skipped + ' skipped' : '.'));
+                        setTimeout(function () { location.reload(); }, 900);
+                    });
+                }).catch(function () {
+                    restorePartner();
+                    showMessage('error', 'Partner assignment failed.');
+                });
+            }
+            if (op === 'assign-batch') {
+                var batch = document.getElementById('opBatchSelect').value;
+                if (!batch) { showMessage('warning', 'Select a batch code.'); return; }
+                if (!confirm('Assign batch code to ' + ids.length + ' selected student(s)?')) return;
+                var restoreBatch = setButtonLoading(btn, LOADING_TEXT[op]);
+                postForm(URLS[op], ids, { batch_code: batch }).then(function (resp) {
+                    if (!resp.ok) {
+                        restoreBatch();
+                        return showResponseError(resp, 'Batch assignment failed.');
+                    }
+                    return resp.json().then(function (data) {
+                        restoreBatch();
+                        if (data.error) { showMessage('error', data.error); return; }
+                        showMessage('success', data.processed + ' assigned batch ' + data.batch_code + (data.skipped ? ', ' + data.skipped + ' skipped' : '.'));
+                        setTimeout(function () { location.reload(); }, 900);
+                    });
+                }).catch(function () {
+                    restoreBatch();
+                    showMessage('error', 'Batch assignment failed.');
+                });
+            }
+            if (op === 'notify') {
+                var subject = document.getElementById('opNotifySubject').value.trim();
+                var message = document.getElementById('opNotifyMessage').value.trim();
+                if (!subject || !message) { showMessage('warning', 'Enter both subject and message.'); return; }
+                if (!confirm('Send email to ' + ids.length + ' selected student(s)?')) return;
+                var restoreNotify = setButtonLoading(btn, LOADING_TEXT[op]);
+                postForm(URLS[op], ids, { subject: subject, message: message }).then(function (resp) {
+                    if (!resp.ok) {
+                        restoreNotify();
+                        return showResponseError(resp, 'Email sending failed.');
+                    }
+                    return resp.json().then(function (data) {
+                        restoreNotify();
+                        if (data.error) { showMessage('error', data.error); return; }
+                        var msgText = data.sent + ' email(s) sent.';
+                        if (data.no_email > 0) {
+                            msgText += ' ' + data.no_email + ' selected student' + (data.no_email === 1 ? ' has' : 's have') + ' no email address.';
+                        } else if (data.skipped > 0) {
+                            msgText += ' ' + data.skipped + ' failed to send.';
+                        }
+                        showMessage('success', msgText);
+                    });
+                }).catch(function () {
+                    restoreNotify();
+                    showMessage('error', 'Email sending failed.');
+                });
+            }
+        });
+    });
+
+    updateUI();
+})();
+</script>
+{% endblock %}

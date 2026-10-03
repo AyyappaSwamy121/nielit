@@ -1,0 +1,31 @@
+{% extends "admin/base_site.html" %}
+{% block title %}{{ title }} | CSC Admin{% endblock %}
+
+{% block content %}
+<h1>Assign {{ label }} to {{ applications.count }} selected application(s)</h1>
+{% if error %}<p style="color:#ba2121; font-weight:bold;">{{ error }}</p>{% endif %}
+
+<form method="post" action="">
+    {% csrf_token %}
+    {% for name, value in hidden_fields %}
+        <input type="hidden" name="{{ name }}" value="{{ value }}">
+    {% endfor %}
+
+    <p>
+        <label for="assign-input"><strong>{{ label }}:</strong></label><br>
+        {% if is_select %}
+        <select id="assign-input" name="{{ field_name }}" style="min-width:300px;">
+            <option value="">-- select --</option>
+            {% for pk, name in choices %}<option value="{{ pk }}">{{ name }}</option>{% endfor %}
+        </select>
+        {% else %}
+        <input type="text" id="assign-input" name="{{ field_name }}" style="min-width:300px;">
+        {% endif %}
+    </p>
+
+    <div>
+        <input type="submit" value="Apply" class="default" style="margin-right:8px;">
+        <a href="{% url 'admin:registrations_studentapplication_changelist' %}" class="button">Cancel</a>
+    </div>
+</form>
+{% endblock %}

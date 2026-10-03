@@ -1,0 +1,332 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Daily Application Summary | Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .summary-icon {
+        width: 44px;
+        height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.75rem;
+        position: relative;
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+    .summary-icon .material-icons-round {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+        font-size: 1.4rem;
+    }
+    .summary-icon .icon-fallback {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 22px;
+        height: 22px;
+        margin: auto;
+        z-index: 1;
+    }
+    .report-table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .report-table { width: 100%; min-width: 700px; border-collapse: collapse; }
+    .report-table thead th { white-space: nowrap; }
+    .report-table tbody td { white-space: normal; overflow-wrap: break-word; }
+    .filter-card { border-radius: 0.75rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <h1 class="h2 fw-bold text-dark mb-0">Daily Application Summary</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mt-1 mb-0 small">
+                <li class="breadcrumb-item"><a href="{% url 'dashboard_home' %}">Dashboard</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Custom Reports</li>
+            </ol>
+        </nav>
+    </div>
+    <div class="btn-toolbar mb-2 mb-md-0 gap-2">
+        <a href="{% url 'report_daily_export' %}?{{ query_string }}&format=csv" class="btn btn-sm btn-outline-success"><span class="material-icons-round fs-6 align-middle me-1">table_view</span>Export CSV</a>
+        <a href="{% url 'report_daily_export' %}?{{ query_string }}&format=excel" class="btn btn-sm btn-outline-success"><span class="material-icons-round fs-6 align-middle me-1">grid_on</span>Export Excel</a>
+        <a href="{% url 'report_daily_export' %}?{{ query_string }}&format=pdf" class="btn btn-sm btn-outline-danger"><span class="material-icons-round fs-6 align-middle me-1">picture_as_pdf</span>Export PDF</a>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="summary-icon bg-primary-subtle text-primary">
+                    <svg class="icon-fallback" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM16 18H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                    <span class="material-icons-round align-middle">description</span>
+                </div>
+                <div>
+                    <div class="text-muted small text-uppercase">Total Applications</div>
+                    <div class="fs-3 fw-bold text-dark">{{ total_applications }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="summary-icon bg-success-subtle text-success">
+                    <svg class="icon-fallback" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                    <span class="material-icons-round align-middle">check_circle</span>
+                </div>
+                <div>
+                    <div class="text-muted small text-uppercase">Submitted</div>
+                    <div class="fs-3 fw-bold text-dark">{{ submitted_count }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="summary-icon bg-warning-subtle text-warning">
+                    <svg class="icon-fallback" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M3 10h11v2H3v-2zm0-2h11V6H3v2zm0 8h7v-2H3v2zm15.01-3.13l.71-.71c.39-.39 1.02-.39 1.41 0l.71.71c.39.39.39 1.02 0 1.41l-.71.71h-.01l-2.12-2.12zm-.71.71l-5.3 5.3V21h2.12l5.3-5.3-2.12-2.12z"/></svg>
+                    <span class="material-icons-round align-middle">edit_note</span>
+                </div>
+                <div>
+                    <div class="text-muted small text-uppercase">Draft</div>
+                    <div class="fs-3 fw-bold text-dark">{{ draft_count }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="summary-icon bg-info-subtle text-info">
+                    <svg class="icon-fallback" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M6 2v6h.01L6 8.01 10 12l-4 4 .01.01H6V22h12v-5.99h-.01L18 16l-4-4 4-3.99-.01-.01H18V2H6z"/></svg>
+                    <span class="material-icons-round align-middle">hourglass_empty</span>
+                </div>
+                <div>
+                    <div class="text-muted small text-uppercase">Pending Review</div>
+                    <div class="fs-3 fw-bold text-dark">{{ pending_count }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="summary-icon bg-danger-subtle text-danger">
+                    <svg class="icon-fallback" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7v-5z"/></svg>
+                    <span class="material-icons-round align-middle">today</span>
+                </div>
+                <div>
+                    <div class="text-muted small text-uppercase">New Today</div>
+                    <div class="fs-3 fw-bold text-dark">{{ new_today }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4 filter-card">
+    <div class="card-body">
+        <form method="GET" action="{% url 'report_daily' %}" class="row g-3">
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">From Date</label>
+                <input type="date" class="form-control form-control-sm" name="date_from" value="{{ f.date_from }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">To Date</label>
+                <input type="date" class="form-control form-control-sm" name="date_to" value="{{ f.date_to }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Application Status</label>
+                <select class="form-select form-select-sm" name="application_status">
+                    <option value="">All Statuses</option>
+                    {% for s in report_statuses %}
+                    <option value="{{ s.value }}" {% if f.application_status == s.value %}selected{% endif %}>{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Program</label>
+                <select class="form-select form-select-sm" name="program">
+                    <option value="">All Programs</option>
+                    {% for prog in programs %}
+                    <option value="{{ prog.id }}" {% if f.program == prog.id|stringformat:"s" %}selected{% endif %}>{{ prog.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Training Partner</label>
+                <select class="form-select form-select-sm" name="training_partner">
+                    <option value="">All Partners</option>
+                    {% for tp in training_partners %}
+                    <option value="{{ tp.id }}" {% if f.training_partner == tp.id|stringformat:"s" %}selected{% endif %}>{{ tp.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold">Qualification</label>
+                <select class="form-select form-select-sm" name="qualification">
+                    <option value="">All Qualifications</option>
+                    {% for q in qualifications %}
+                    <option value="{{ q.id }}" {% if f.qualification == q.id|stringformat:"s" %}selected{% endif %}>{{ q.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">State</label>
+                <select class="form-select form-select-sm" name="state" id="report_state">
+                    <option value="">All States</option>
+                    {% for s in states %}
+                    <option value="{{ s.id }}" {% if f.state == s.id|stringformat:"s" %}selected{% endif %}>{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">District</label>
+                <select class="form-select form-select-sm" name="district" id="report_district">
+                    <option value="">All Districts</option>
+                    {% for d in districts %}
+                    <option value="{{ d.id }}" data-state="{{ d.state_id }}" {% if f.district == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary btn-sm me-2"><span class="material-icons-round fs-6 align-middle me-1">bar_chart</span>Generate Report</button>
+                <a href="{% url 'report_daily' %}" class="btn btn-outline-secondary btn-sm"><span class="material-icons-round fs-6 align-middle me-1">cleaning_services</span>Clear</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if filters_active %}
+<div class="alert alert-light border small mb-4">
+    <strong>Active filters applied.</strong> <a href="{% url 'report_daily' %}">Clear all filters</a>
+</div>
+{% endif %}
+
+<!-- Result Count -->
+<div class="mb-3 small text-muted fw-bold">Showing <span class="text-dark">{{ total_count }}</span> applications</div>
+
+{% if total_count %}
+<!-- Date Report Table -->
+<div class="card mb-4">
+    <div class="card-header bg-white fw-bold py-3"><span class="material-icons-round text-primary align-middle me-2">calendar_month</span>Applications by Date</div>
+    <div class="card-body p-0">
+        <div class="report-table-wrapper">
+            <table class="table table-hover align-middle mb-0 report-table">
+                <thead class="table-light text-muted small">
+                    <tr>
+                        <th class="ps-4">Date</th>
+                        <th>Total</th>
+                        <th>Submitted</th>
+                        <th>Draft</th>
+                        <th class="pe-4">Pending Review</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in daily_rows %}
+                    <tr>
+                        <td class="ps-4 fw-bold">{{ row.day|date:"M d, Y" }}</td>
+                        <td class="fw-bold">{{ row.total }}</td>
+                        <td>{{ row.submitted }}</td>
+                        <td>{{ row.draft }}</td>
+                        <td class="pe-4">
+                            {% if row.pending %}<span class="badge bg-warning text-dark">Pending</span>{% else %}{{ row.pending }}{% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="text-center text-muted py-4">No data found for the selected filters.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Chart -->
+<div class="card mb-4">
+    <div class="card-header bg-white fw-bold py-3"><span class="material-icons-round text-primary align-middle me-2">insert_chart</span>Applications by Date</div>
+    <div class="card-body">
+        <div style="height: 320px;">
+            <canvas id="dailyChart"></canvas>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card mb-4">
+    <div class="card-body p-5 text-center">
+        <span class="material-icons-round text-muted display-4 d-block mb-3">search_off</span>
+        <h4 class="fw-bold text-dark">No data found for the selected filters.</h4>
+        <p class="text-muted">Try widening your date range or clearing filters.</p>
+        <a href="{% url 'report_daily' %}" class="btn btn-outline-primary btn-sm">Clear Filters</a>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var labels = {{ chart_days|safe }};
+        var data = {{ chart_totals|safe }};
+        if (labels.length) {
+            var ctx = document.getElementById('dailyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Applications',
+                        data: data,
+                        backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                        borderColor: '#0d6efd',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                }
+            });
+        }
+
+        // State -> District dependent filter
+        var stateSelect = document.getElementById('report_state');
+        var districtSelect = document.getElementById('report_district');
+        function filterDistricts() {
+            var selected = stateSelect.value;
+            Array.prototype.forEach.call(districtSelect.options, function (opt) {
+                if (!opt.value) { opt.style.display = ''; return; }
+                if (!selected) { opt.style.display = ''; }
+                else { opt.style.display = opt.getAttribute('data-state') === selected ? '' : 'none'; }
+            });
+            if (districtSelect.value) {
+                var sel = districtSelect.options[districtSelect.selectedIndex];
+                if (sel.getAttribute('data-state') !== selected) districtSelect.value = '';
+            }
+        }
+        stateSelect.addEventListener('change', filterDistricts);
+        filterDistricts();
+    });
+</script>
+{% endblock %}

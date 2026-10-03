@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Platform Settings | Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2"><span class="material-icons-round align-middle me-2 text-secondary" style="font-size: 1.8rem;">settings</span>Platform Settings</h1>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+    <span class="material-icons-round align-middle me-2" style="font-size: 1.1rem;">info</span>{{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if not can_change %}
+<div class="alert alert-warning d-flex align-items-center" role="alert">
+    <span class="material-icons-round me-2">lock</span>
+    <span>You have read-only access. Only users with the <strong>change platform settings</strong> permission can modify values.</span>
+</div>
+{% endif %}
+
+<div class="row g-4">
+    <!-- Settings Form -->
+    <div class="col-lg-8">
+        <form method="post" enctype="multipart/form-data" id="settingsForm">
+            {% csrf_token %}
+
+            <!-- Platform Identity & Branding -->
+            <div class="card shadow-sm mb-4" id="cat-platform">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons-round text-secondary">tune</span>
+                    <span class="fw-bold">Platform Identity &amp; Branding</span>
+                    <span class="text-muted small ms-2">Portal name, organization, logo, favicon and contact details.</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        {% for field in platform_fields %}
+                        <div class="{% if field.field_type == 'textarea' %}col-12{% else %}col-md-6{% endif %}">
+                            <label class="form-label fw-semibold" for="id_{{ field.key }}">{{ field.label }}</label>
+                            {% if field.field_type == 'textarea' %}
+                                <textarea class="form-control" id="id_{{ field.key }}" name="{{ field.key }}" rows="3">{{ field.value }}</textarea>
+                            {% elif field.field_type == 'checkbox' %}
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" id="id_{{ field.key }}" name="{{ field.key }}" {% if field.value == '1' %}checked{% endif %}>
+                                    <label class="form-check-label" for="id_{{ field.key }}">Enabled</label>
+                                </div>
+                            {% elif field.field_type == 'number' %}
+                                <input type="number" class="form-control" id="id_{{ field.key }}" name="{{ field.key }}" value="{{ field.value }}">
+                            {% else %}
+                                <input type="{{ field.field_type }}" class="form-control" id="id_{{ field.key }}" name="{{ field.key }}" value="{{ field.value }}">
+                            {% endif %}
+                            <div class="form-text">{{ field.help_text }}</div>
+                        </div>
+                        {% endfor %}
+
+                        <!-- Logo -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="id_logo">Logo</label>
+                            <input type="file" class="form-control" id="id_logo" name="logo" accept=".png,.jpg,.jpeg,.webp">
+                            {% if platform.logo %}
+                            <div class="mt-2">
+                                <img src="{{ platform.logo.url }}" alt="Logo preview" class="img-thumbnail" style="max-height: 80px;">
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Upload a new logo (PNG/JPG/JPEG/WebP, max 5 MB).</div>
+                        </div>
+
+                        <!-- Favicon -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="id_favicon">Favicon</label>
+                            <input type="file" class="form-control" id="id_favicon" name="favicon" accept=".ico,.png">
+                            {% if platform.favicon %}
+                            <div class="mt-2">
+                                <img src="{{ platform.favicon.url }}" alt="Favicon preview" class="img-thumbnail" style="max-height: 40px;">
+                            </div>
+                            {% endif %}
+                            <div class="form-text">Upload a favicon (ICO/PNG, max 1 MB).</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% for category in categories %}
+            <div class="card shadow-sm mb-4" id="cat-{{ category.key }}">
+                <div class="card-header bg-white d-flex align-items-center gap-2">
+                    <span class="material-icons-round text-secondary">{{ category.icon }}</span>
+                    <span class="fw-bold">{{ category.label }}</span>
+                    <span class="text-muted small ms-2">{{ category.help }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        {% for field in category.fields %}
+                        <div class="{% if field.field_type == 'textarea' %}col-12{% else %}col-md-6{% endif %}">
+                            <label class="form-label fw-semibold" for="id_{{ field.key }}">{{ field.label }}</label>
+                            {% if field.field_type == 'file' %}
+                                <input type="file" class="form-control" id="id_{{ field.key }}" name="{{ field.key }}" accept=".png,.jpg,.jpeg,.ico">
+                                {% if field.value %}
+                                <div class="form-text">
+                                    Current: <span class="text-primary">{{ field.value }}</span>
+                                </div>
+                                {% endif %}
+                            {% elif field.field_type == 'textarea' %}
+                                <textarea class="form-control" id="id_{{ field.key }}" name="{{ field.key }}" rows="3">{{ field.value }}</textarea>
+                            {% elif field.field_type == 'checkbox' %}
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" type="checkbox" id="id_{{ field.key }}" name="{{ field.key }}" {% if field.value == '1' %}checked{% endif %}>
+                                    <label class="form-check-label" for="id_{{ field.key }}">Enabled</label>
+                                </div>
+                            {% else %}
+                                <input type="{{ field.field_type }}" class="form-control" id="id_{{ field.key }}" name="{{ field.key }}" value="{{ field.value }}">
+                            {% endif %}
+                            <div class="form-text">{{ field.help_text }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            {% if can_change %}
+            <div class="d-flex gap-2 mb-4">
+                <button type="submit" class="btn btn-primary rounded-pill px-4">
+                    <span class="material-icons-round align-middle me-1" style="font-size: 1.1rem;">save</span>Save Settings
+                </button>
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="window.location.reload();">
+                    <span class="material-icons-round align-middle me-1" style="font-size: 1.1rem;">refresh</span>Reset
+                </button>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- System Information -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white">
+                <span class="material-icons-round align-middle me-1 text-secondary">monitor_heart</span>
+                <span class="fw-bold">System Information</span>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Django Version</span>
+                        <span class="badge bg-light text-dark">v{{ system_info.django_version }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Python</span>
+                        <span class="badge bg-light text-dark">{{ system_info.python_version }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Database Engine</span>
+                        <span class="badge bg-light text-dark text-capitalize">{{ system_info.db_engine }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Database Size</span>
+                        <span class="badge bg-light text-dark">{{ system_info.db_size|filesizeformat }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Media Storage</span>
+                        <span class="badge bg-light text-dark">{{ system_info.media_size|filesizeformat }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Audit Log Entries</span>
+                        <span class="badge bg-light text-dark">{{ system_info.audit_log_count }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="text-muted">Last Backup</span>
+                        {% if system_info.last_backup %}
+                        <span class="badge bg-success-subtle text-success">{{ system_info.last_backup_at|date:"d M Y H:i" }}</span>
+                        {% else %}
+                        <span class="badge bg-warning-subtle text-warning">None yet</span>
+                        {% endif %}
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-white">
+                <span class="material-icons-round align-middle me-1 text-secondary">article</span>
+                <span class="fw-bold">Quick Help</span>
+            </div>
+            <div class="card-body small text-muted">
+                <p class="mb-2"><span class="material-icons-round align-middle me-1 text-primary" style="font-size: 1rem;">save</span>Changes are saved immediately and audited.</p>
+                <p class="mb-2"><span class="material-icons-round align-middle me-1 text-primary" style="font-size: 1rem;">image</span>Upload a new logo/favicon to replace the defaults.</p>
+                <p class="mb-0"><span class="material-icons-round align-middle me-1 text-primary" style="font-size: 1rem;">backup</span>Backups are managed from the <a href="{% url 'backup_center' %}">Backup &amp; Restore</a> page.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

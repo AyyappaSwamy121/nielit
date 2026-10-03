@@ -1,0 +1,82 @@
+{% load static %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm sticky-top" data-bs-theme="dark">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand d-flex align-items-center" href="{% url 'dashboard_home' %}">
+            <img src="{% static 'csc_logo.png' %}" alt="Logo" class="me-2" style="max-height: 80px; width: auto;">
+            <strong class="d-none d-sm-inline">CSC Admin Portal</strong>
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            {% if request.user.is_authenticated %}
+            <!-- Global Search Bar -->
+            <form class="d-flex mx-auto my-2 my-lg-0 w-50" role="search">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-0"><span class="material-icons-round text-muted fs-6">search</span></span>
+                    <input class="form-control border-0" type="search" placeholder="Search Application No, Aadhaar, Name..." aria-label="Search">
+                </div>
+            </form>
+            {% endif %}
+
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                {% if request.user.is_authenticated %}
+                {% if request.user.is_authenticated and request.user.is_staff %}
+                <!-- Admin Dashboard Button -->
+                <li class="nav-item me-3 mb-2 mb-lg-0">
+                    <a href="{% url 'dashboard_home' %}" class="btn btn-outline-light rounded-pill px-3 py-1 d-flex align-items-center shadow-sm admin-dashboard-btn {% if request.resolver_match.url_name == 'dashboard_home' %}active bg-white text-primary{% endif %}">
+                        <span class="material-icons-round fs-6 me-1">dashboard</span> Admin Dashboard
+                    </a>
+                </li>
+                {% endif %}
+                
+                <!-- Pending Approvals Badge -->
+                <li class="nav-item me-3 mb-2 mb-lg-0 d-none d-lg-block">
+                    <span class="badge bg-danger rounded-pill px-3 py-2 d-flex align-items-center shadow-sm">
+                        <span class="material-icons-round fs-6 me-1">pending_actions</span> 14 Pending
+                    </span>
+                </li>
+                
+                <!-- Notification Bell -->
+                <li class="nav-item me-3">
+                    <a class="nav-link position-relative text-white" href="#" role="button">
+                        <span class="material-icons-round fs-5">notifications</span>
+                        <span class="position-absolute top-25 start-75 translate-middle p-1 bg-warning border border-light rounded-circle">
+                            <span class="visually-hidden">New alerts</span>
+                        </span>
+                    </a>
+                </li>
+                
+                <!-- Profile Dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle text-white d-flex align-items-center fw-bold" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="https://ui-avatars.com/api/?name={{ request.user.username }}&background=0D8ABC&color=fff" alt="Avatar" class="rounded-circle me-2 border border-2 border-white" width="32" height="32">
+                        {{ request.user.username|title }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">
+                        <li><h6 class="dropdown-header">Currently Logged In</h6></li>
+                        <li><a class="dropdown-item" href="#"><span class="material-icons-round align-middle me-2 fs-6">person</span> My Profile</a></li>
+                        <li><a class="dropdown-item" href="#"><span class="material-icons-round align-middle me-2 fs-6">settings</span> Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <form method="post" action="/admin/logout/?next=/" class="m-0 p-0">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item text-danger fw-bold"><span class="material-icons-round align-middle me-2 fs-6">logout</span> Secure Logout</button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+                {% else %}
+                <li class="nav-item">
+                    <a class="nav-link btn btn-warning text-dark rounded-pill px-4 fw-bold shadow-sm d-flex align-items-center" href="/admin-panel/?next=/dashboard/">
+                        <span class="material-icons-round me-2">admin_panel_settings</span> Admin Panel
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+

@@ -1,0 +1,533 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Advanced Search | Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .sel-col { width: 50px; min-width: 50px; text-align: center; }
+    .sel-col input { cursor: pointer; }
+    tr.row-selected td { background-color: rgba(13, 110, 253, 0.08) !important; }
+    .bulk-toolbar {
+        position: sticky;
+        top: 66px;
+        z-index: 1020;
+        background-color: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.05);
+    }
+    @media (max-width: 767.98px) { .bulk-toolbar { top: 60px; } }
+    .photo-thumb {
+        width: 60px;
+        height: 70px;
+        object-fit: cover;
+        border-radius: 0.375rem;
+        border: 1px solid #dee2e6;
+        background: #f8f9fa;
+    }
+    .applications-table-wrapper { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .applications-table { width: max-content; min-width: 100%; border-collapse: collapse; }
+    .applications-table thead th { position: sticky; top: 0; z-index: 5; white-space: nowrap; }
+    .applications-table tbody td { vertical-align: middle; white-space: normal; overflow-wrap: break-word; }
+    .applications-table .cell-nowrap { white-space: nowrap; }
+    .applications-table .cell-email { overflow-wrap: anywhere; }
+    .applications-table .col-appno { min-width: 150px; }
+    .applications-table .col-photo { width: 90px; min-width: 90px; }
+    .applications-table .col-name { min-width: 180px; }
+    .applications-table .col-mobile { min-width: 130px; }
+    .applications-table .col-email { min-width: 220px; }
+    .applications-table .col-program { min-width: 220px; }
+    .applications-table .col-inst { min-width: 220px; }
+    .applications-table .col-appstatus { min-width: 180px; }
+    .applications-table .col-actions { width: 130px; min-width: 130px; }
+    .applications-table .status-badge { white-space: nowrap; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Advanced Search</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'student_directory' %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-people me-1"></i>Student Directory</a>
+        <a href="{% url 'student_bulk_operations' %}" class="btn btn-sm btn-outline-secondary ms-2"><i class="bi bi-list-check me-1"></i>Bulk Operations</a>
+    </div>
+</div>
+
+<!-- Search Form -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{% url 'student_advanced_search' %}" id="advancedSearchForm">
+            <div class="row g-3">
+                <h6 class="text-muted text-uppercase fw-bold w-100 mb-1"><i class="bi bi-person-vcard me-1"></i>Identity</h6>
+                <div class="col-md-4">
+                    <label class="form-label">Application Number</label>
+                    <input type="text" class="form-control" name="application_number" value="{{ current.application_number }}" placeholder="CSC...">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" class="form-control" name="full_name" value="{{ current.full_name }}" placeholder="Student name">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Mobile Number</label>
+                    <input type="text" class="form-control" name="mobile_number" value="{{ current.mobile_number }}" placeholder="10-digit mobile">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Email</label>
+                    <input type="text" class="form-control" name="email" value="{{ current.email }}" placeholder="Email address">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Aadhaar</label>
+                    <input type="text" class="form-control" name="aadhaar_number" value="{{ current.aadhaar_number }}" placeholder="12-digit Aadhaar">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Gender</label>
+                    <select class="form-select" name="gender">
+                        <option value="">All</option>
+                        {% for value, label in genders %}
+                        <option value="{{ value }}" {% if current.gender == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <h6 class="text-muted text-uppercase fw-bold w-100 mb-1 mt-2"><i class="bi bi-calendar-range me-1"></i>Date of Birth / Age</h6>
+                <div class="col-md-2">
+                    <label class="form-label">DOB From</label>
+                    <input type="date" class="form-control" name="dob_from" value="{{ current.dob_from }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">DOB To</label>
+                    <input type="date" class="form-control" name="dob_to" value="{{ current.dob_to }}">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Age Min</label>
+                    <input type="number" class="form-control" name="age_min" value="{{ current.age_min }}" min="0" max="120" placeholder="e.g. 18">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Age Max</label>
+                    <input type="number" class="form-control" name="age_max" value="{{ current.age_max }}" min="0" max="120" placeholder="e.g. 35">
+                </div>
+
+                <h6 class="text-muted text-uppercase fw-bold w-100 mb-1 mt-2"><i class="bi bi-geo-alt me-1"></i>Location</h6>
+                <div class="col-md-3">
+                    <label class="form-label">State</label>
+                    <select class="form-select" name="state" id="as_state">
+                        <option value="">All States</option>
+                        {% for state in states %}
+                        <option value="{{ state.id }}" {% if current.state == state.id|stringformat:"s" %}selected{% endif %}>{{ state.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">District</label>
+                    <select class="form-select" name="district" id="as_district">
+                        <option value="">All Districts</option>
+                        {% for d in districts %}
+                        <option value="{{ d.id }}" data-state="{{ d.state_id }}" {% if current.district == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Area / Village</label>
+                    <input type="text" class="form-control" name="area_village" value="{{ current.area_village }}" placeholder="Area or village">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Institution</label>
+                    <input type="text" class="form-control" name="institution" value="{{ current.institution }}" placeholder="Institution name">
+                </div>
+
+                <h6 class="text-muted text-uppercase fw-bold w-100 mb-1 mt-2"><i class="bi bi-mortarboard me-1"></i>Education &amp; Program</h6>
+                <div class="col-md-3">
+                    <label class="form-label">Qualification</label>
+                    <select class="form-select" name="qualification">
+                        <option value="">All</option>
+                        {% for q in qualifications %}
+                        <option value="{{ q.id }}" {% if current.qualification == q.id|stringformat:"s" %}selected{% endif %}>{{ q.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Program</label>
+                    <select class="form-select" name="program">
+                        <option value="">All</option>
+                        {% for prog in programs %}
+                        <option value="{{ prog.id }}" {% if current.program == prog.id|stringformat:"s" %}selected{% endif %}>{{ prog.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Training Partner / ATC</label>
+                    <select class="form-select" name="training_partner">
+                        <option value="">All</option>
+                        {% for tp in training_partners %}
+                        <option value="{{ tp.id }}" {% if current.training_partner == tp.id|stringformat:"s" %}selected{% endif %}>{{ tp.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Batch Code</label>
+                    <input type="text" class="form-control" name="batch_code" value="{{ current.batch_code }}" placeholder="Batch code">
+                </div>
+
+                <h6 class="text-muted text-uppercase fw-bold w-100 mb-1 mt-2"><i class="bi bi-check2-square me-1"></i>Status &amp; Dates</h6>
+                <div class="col-md-3">
+                    <label class="form-label">ABC / APAAR ID</label>
+                    <input type="text" class="form-control" name="abc_id" value="{{ current.abc_id }}" placeholder="ABC ID">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Application Status</label>
+                    <select class="form-select" name="application_status">
+                        <option value="">All</option>
+                        {% for status in statuses %}
+                        <option value="{{ status.value }}" {% if current.application_status == status.value %}selected{% endif %}>{{ status.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Registration Date From</label>
+                    <input type="date" class="form-control" name="reg_from" value="{{ current.reg_from }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Registration Date To</label>
+                    <input type="date" class="form-control" name="reg_to" value="{{ current.reg_to }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Submission Date From</label>
+                    <input type="date" class="form-control" name="sub_from" value="{{ current.sub_from }}">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Submission Date To</label>
+                    <input type="date" class="form-control" name="sub_to" value="{{ current.sub_to }}">
+                </div>
+
+                <div class="col-12 d-flex flex-wrap gap-2 mt-3">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-search me-1"></i>Search</button>
+                    <a href="{% url 'student_advanced_search' %}" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i>Clear Filters</a>
+                    <button type="button" id="saveSearchBtn" class="btn btn-outline-info"><i class="bi bi-bookmark-plus me-1"></i>Save Search</button>
+                    <a href="{% url 'advanced_search_export' %}?{{ query_string }}&format=csv" class="btn btn-outline-success"><i class="bi bi-filetype-csv me-1"></i>Export CSV</a>
+                    <a href="{% url 'advanced_search_export' %}?{{ query_string }}&format=excel" class="btn btn-outline-success"><i class="bi bi-file-earmark-excel me-1"></i>Export Excel</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Saved Searches -->
+{% if saved_searches %}
+<div class="card border-secondary-subtle mb-3">
+    <div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
+        <span class="fw-bold"><i class="bi bi-bookmarks me-1"></i>Saved Searches:</span>
+        {% for saved in saved_searches %}
+        <a href="{% url 'student_advanced_search' %}?{{ saved.query_string }}" class="btn btn-sm btn-outline-secondary">{{ saved.name }}</a>
+        <button type="button" class="btn btn-sm btn-outline-danger saved-delete" data-index="{{ forloop.counter0 }}" title="Delete saved search"><i class="bi bi-x"></i></button>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Active Filter Summary -->
+{% if filters_active %}
+<div class="card border-primary-subtle bg-primary-subtle bg-opacity-10 mb-3">
+    <div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
+        <span class="fw-bold"><i class="bi bi-funnel-fill me-1"></i>Active Filters:</span>
+        {% for label, val in current.items %}
+            {% if val %}
+                {% if label in 'dob_from dob_to age_min age_max reg_from reg_to sub_from sub_to' %}
+                    <span class="badge bg-primary">{{ label|title }}: {{ val }}</span>
+                {% elif label == 'state' %}<span class="badge bg-primary">State: {{ current_state_name }}</span>
+                {% elif label == 'district' %}<span class="badge bg-primary">District: {{ current_district_name }}</span>
+                {% elif label == 'program' %}<span class="badge bg-primary">Program: {{ current_program_name }}</span>
+                {% elif label == 'qualification' %}<span class="badge bg-primary">Qualification: {{ current_qualification_name }}</span>
+                {% elif label == 'training_partner' %}<span class="badge bg-primary">Partner: {{ current_training_partner_name }}</span>
+                {% elif label == 'application_status' %}<span class="badge bg-primary">Status: {{ val|title }}</span>
+                {% else %}<span class="badge bg-primary">{{ label|title }}: {{ val }}</span>
+                {% endif %}
+            {% endif %}
+        {% endfor %}
+        <a href="{% url 'student_advanced_search' %}" class="btn btn-sm btn-outline-danger ms-auto"><i class="bi bi-x-lg me-1"></i>Clear All</a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Bulk Selection Toolbar -->
+{% csrf_token %}
+<div id="bulkToolbar" class="bulk-toolbar d-none p-2 px-3 mb-3">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <span class="fw-bold" id="selectionCount">0 students selected</span>
+        <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
+            <button type="button" id="clearSelectionBtn" class="btn btn-sm btn-outline-secondary"><i class="bi bi-x-lg me-1"></i>Clear Selection</button>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" id="bulkActionsDropdown" disabled>
+                    <i class="bi bi-list-check me-1"></i>Actions
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow">
+                    <li><a class="dropdown-item bulk-action" href="#" data-action="export" data-format="csv"><i class="bi bi-filetype-csv me-2"></i>Export CSV</a></li>
+                    <li><a class="dropdown-item bulk-action" href="#" data-action="export" data-format="excel"><i class="bi bi-file-earmark-excel me-2"></i>Export Excel</a></li>
+                    <li><a class="dropdown-item bulk-action" href="#" data-action="print"><i class="bi bi-printer me-2"></i>Print Selected</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="bulkMessage" class="d-none"></div>
+
+<!-- Result Count -->
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <span class="text-muted small">
+        <i class="bi bi-info-circle me-1"></i>
+        Search Results: {{ total_count }} student{{ total_count|pluralize }}
+    </span>
+</div>
+
+<!-- Results Table -->
+<div class="applications-table-wrapper">
+    <table class="table table-striped table-hover align-middle applications-table">
+        <thead class="table-dark">
+            <tr>
+                <th scope="col" class="sel-col">
+                    <input class="form-check-input" type="checkbox" id="selectAllCheckbox" title="Select all on this page">
+                </th>
+                <th scope="col" class="col-appno">Application No</th>
+                <th scope="col" class="col-photo">Photo</th>
+                <th scope="col" class="col-name">Name</th>
+                <th scope="col" class="col-mobile">Mobile</th>
+                <th scope="col" class="col-email">Email</th>
+                <th scope="col" class="col-program">Program</th>
+                <th scope="col" class="col-inst">Institution</th>
+                <th scope="col" class="col-appstatus">Status</th>
+                <th scope="col" class="col-actions">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for app in page_obj %}
+            <tr data-id="{{ app.id }}">
+                <td class="sel-col"><input class="form-check-input application-checkbox" type="checkbox" value="{{ app.id }}"></td>
+                <td class="col-appno cell-nowrap"><strong>{{ app.application_number }}</strong></td>
+                <td class="col-photo">
+                    {% if app.photo_url %}<img src="{{ app.photo_url }}" class="photo-thumb" alt="Photo">
+                    {% else %}<div class="photo-thumb d-inline-flex align-items-center justify-content-center text-muted bg-light" style="font-size: 1.4rem;"><i class="bi bi-person"></i></div>
+                    {% endif %}
+                </td>
+                <td class="col-name">{{ app.full_name }}</td>
+                <td class="col-mobile cell-nowrap">{{ app.mobile_number }}</td>
+                <td class="col-email cell-email">{{ app.email }}</td>
+                <td class="col-program">{{ app.program_opting.name|default:"-" }}</td>
+                <td class="col-inst">{{ app.institution|default:"-" }}</td>
+                <td class="col-appstatus">
+                    {% if app.is_draft %}<span class="badge bg-info text-dark status-badge">Draft</span>
+                    {% else %}<span class="badge bg-success status-badge">Submitted</span>{% endif %}
+                </td>
+                <td class="col-actions">
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">Actions</button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{% url 'student_profile' app.id %}"><i class="bi bi-person-lines-fill"></i> View Profile</a></li>
+                            <li><a class="dropdown-item" href="{% url 'admin:registrations_studentapplication_change' app.id %}"><i class="bi bi-file-earmark-text"></i> View Application</a></li>
+                        </ul>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="10" class="text-center py-5 text-muted">
+                    <i class="bi bi-search fs-1 d-block mb-3"></i>
+                    {% if filters_active %}
+                    <h5 class="fw-bold text-dark">No students match your search criteria</h5>
+                    <p class="mb-3">Try adjusting your search conditions.</p>
+                    {% else %}
+                    <h5 class="fw-bold text-dark">Enter search criteria to find students</h5>
+                    <p class="mb-3">Combine any of the conditions above and click Search.</p>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page=1{% if query_string %}&{{ query_string }}{% endif %}">&laquo; First</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}">Previous</a></li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">&laquo; First</span></li>
+        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+        {% endif %}
+        <li class="page-item active"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}">Next</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if query_string %}&{{ query_string }}{% endif %}">Last &raquo;</a></li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Next</span></li>
+        <li class="page-item disabled"><span class="page-link">Last &raquo;</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+    var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    csrfToken = csrfToken ? csrfToken.value : '';
+
+    // State -> District linkage
+    var stateSelect = document.getElementById('as_state');
+    var districtSelect = document.getElementById('as_district');
+    function filterDistricts() {
+        if (!stateSelect || !districtSelect) return;
+        var selectedState = stateSelect.value;
+        districtSelect.querySelectorAll('option').forEach(function (opt) {
+            if (!opt.value || !selectedState) { opt.style.display = ''; }
+            else { opt.style.display = opt.getAttribute('data-state') === selectedState ? '' : 'none'; }
+        });
+    }
+    if (stateSelect && districtSelect) {
+        stateSelect.addEventListener('change', function () { districtSelect.value = ''; filterDistricts(); });
+        filterDistricts();
+    }
+
+    // Save search
+    var saveBtn = document.getElementById('saveSearchBtn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', function () {
+            var qs = new URLSearchParams(new FormData(document.getElementById('advancedSearchForm'))).toString();
+            var name = prompt('Name this saved search:');
+            if (!name) return;
+            fetch('{% url "student_advanced_search" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: 'action=save&name=' + encodeURIComponent(name) + '&query_string=' + encodeURIComponent(qs)
+            }).then(function (r) { return r.json(); }).then(function (data) {
+                if (data.ok) { alert('Saved search stored.'); location.reload(); }
+                else { alert(data.error || 'Could not save search.'); }
+            });
+        });
+    }
+
+    // Delete saved search
+    document.querySelectorAll('.saved-delete').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            if (!confirm('Delete this saved search?')) return;
+            fetch('{% url "student_advanced_search" %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: 'action=delete&index=' + btn.getAttribute('data-index')
+            }).then(function (r) { return r.json(); }).then(function (data) {
+                if (data.ok) { location.reload(); }
+                else { alert(data.error || 'Could not delete search.'); }
+            });
+        });
+    });
+
+    function getSelectedIds() {
+        var ids = [];
+        document.querySelectorAll('.application-checkbox').forEach(function (cb) { if (cb.checked) ids.push(cb.value); });
+        return ids;
+    }
+    function updateUI() {
+        var cbs = document.querySelectorAll('.application-checkbox');
+        var selected = getSelectedIds();
+        var count = selected.length;
+        var total = cbs.length;
+        var toolbar = document.getElementById('bulkToolbar');
+        var selectAll = document.getElementById('selectAllCheckbox');
+        var counter = document.getElementById('selectionCount');
+        var bulkBtn = document.getElementById('bulkActionsDropdown');
+        cbs.forEach(function (cb) {
+            var row = cb.closest('tr');
+            if (row) row.classList.toggle('row-selected', cb.checked);
+        });
+        if (selectAll) { selectAll.checked = count > 0 && count === total; selectAll.indeterminate = count > 0 && count < total; }
+        if (counter) counter.textContent = count + ' student' + (count === 1 ? '' : 's') + ' selected';
+        if (toolbar) toolbar.classList.toggle('d-none', count === 0);
+        if (bulkBtn) bulkBtn.disabled = count === 0;
+    }
+    function showMessage(type, text) {
+        var msg = document.getElementById('bulkMessage');
+        if (!msg) return;
+        var classes = { success: 'alert alert-success alert-dismissible fade show', error: 'alert alert-danger alert-dismissible fade show', warning: 'alert alert-warning alert-dismissible fade show' };
+        msg.className = classes[type] || classes.success;
+        msg.innerHTML = '<i class="bi bi-' + (type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'exclamation-circle') + ' me-2"></i>' + text + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+        msg.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+    function postForm(url, ids) {
+        var body = new URLSearchParams();
+        ids.forEach(function (id) { body.append('selected_ids[]', id); });
+        return fetch(url, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrfToken, 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+            body: body.toString(),
+            credentials: 'same-origin'
+        });
+    }
+    function clearSelection() {
+        document.querySelectorAll('.application-checkbox').forEach(function (cb) { cb.checked = false; });
+        var selectAll = document.getElementById('selectAllCheckbox');
+        if (selectAll) { selectAll.checked = false; selectAll.indeterminate = false; }
+        updateUI();
+    }
+    function downloadBlob(resp, fallbackName) {
+        var disposition = resp.headers.get('Content-Disposition') || '';
+        var match = /filename="?([^"]+)"?/.exec(disposition);
+        var filename = match ? match[1] : fallbackName;
+        return resp.blob().then(function (blob) {
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url; a.download = filename;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+    }
+
+    document.querySelectorAll('.application-checkbox').forEach(function (cb) { cb.addEventListener('change', updateUI); });
+    var selectAll = document.getElementById('selectAllCheckbox');
+    if (selectAll) {
+        selectAll.addEventListener('change', function () {
+            document.querySelectorAll('.application-checkbox').forEach(function (cb) { cb.checked = selectAll.checked; });
+            updateUI();
+        });
+    }
+    var clearBtn = document.getElementById('clearSelectionBtn');
+    if (clearBtn) clearBtn.addEventListener('click', clearSelection);
+
+    document.querySelectorAll('.bulk-action').forEach(function (link) {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            var ids = getSelectedIds();
+            var action = link.getAttribute('data-action');
+            var format = link.getAttribute('data-format') || 'csv';
+            if (ids.length === 0) { showMessage('error', 'Please select at least one student.'); return; }
+            if (action === 'export') {
+                postForm('{% url "bulk_export" %}', ids).then(function (resp) {
+                    if (!resp.ok) { showMessage('error', 'Export failed.'); return; }
+                    return downloadBlob(resp, format === 'excel' ? 'selected_students.xlsx' : 'selected_students.csv').then(function () {
+                        showMessage('success', ids.length + ' student' + (ids.length === 1 ? '' : 's') + ' exported.');
+                    });
+                });
+            }
+            if (action === 'print') {
+                window.open('{% url "bulk_print" %}?ids=' + ids.join(','), '_blank');
+            }
+        });
+    });
+
+    updateUI();
+})();
+</script>
+{% endblock %}

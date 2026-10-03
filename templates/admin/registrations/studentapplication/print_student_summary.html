@@ -1,0 +1,42 @@
+{% extends "admin/base_site.html" %}
+{% block title %}Print student summary | CSC Admin{% endblock %}
+
+{% block content %}
+<script>window.addEventListener('load', function(){ setTimeout(function(){ window.print(); }, 300); });</script>
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <h1>Student Summary - {{ applications.count }} selected application(s)</h1>
+    <a href="{% url 'admin:registrations_studentapplication_changelist' %}" class="button">Back to list</a>
+</div>
+
+<table style="width:100%; border-collapse:collapse;">
+    <thead>
+        <tr>
+            <th style="border:1px solid #ddd; padding:6px;">App No</th>
+            <th style="border:1px solid #ddd; padding:6px;">Name</th>
+            <th style="border:1px solid #ddd; padding:6px;">Mobile</th>
+            <th style="border:1px solid #ddd; padding:6px;">District</th>
+            <th style="border:1px solid #ddd; padding:6px;">Program</th>
+            <th style="border:1px solid #ddd; padding:6px;">Status</th>
+            <th style="border:1px solid #ddd; padding:6px;">Verification</th>
+            <th style="border:1px solid #ddd; padding:6px;">Batch</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for app in applications %}
+        <tr>
+            <td style="border:1px solid #ddd; padding:6px;">{{ app.application_number }}</td>
+            <td style="border:1px solid #ddd; padding:6px;">{{ app.full_name }}</td>
+            <td style="border:1px solid #ddd; padding:6px;">{{ app.mobile_number }}</td>
+            <td style="border:1px solid #ddd; padding:6px;">{{ app.district.name|default:"-" }}</td>
+            <td style="border:1px solid #ddd; padding:6px;">{{ app.program_opting.name|default:"-" }}</td>
+            <td style="border:1px solid #ddd; padding:6px;">{{ app.status.name|default:"UNKNOWN" }}</td>
+            <td style="border:1px solid #ddd; padding:6px;">{{ app.verification_status.name|default:"-" }}</td>
+            <td style="border:1px solid #ddd; padding:6px;">{{ app.batch_code|default:"-" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="8" style="padding:12px;">No applications selected.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

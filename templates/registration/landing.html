@@ -1,0 +1,405 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}Student Registration | {{ platform_settings.organization_name|default:'Council for Skills and Competencies' }}{% endblock %}
+{% block meta_description %}Apply online for training and skill development programs through the {{ platform_settings.organization_name|default:'Council for Skills and Competencies' }} student registration portal.{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background-color: #f8f9fa;
+        min-height: 100vh;
+    }
+
+    .landing-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(100vh - 200px);
+        padding: 2rem 1rem;
+    }
+
+    .landing-card {
+        width: 100%;
+        max-width: 720px;
+        background: #ffffff;
+        border: 1px solid #dce4ec;
+        border-radius: 1rem;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+        overflow: hidden;
+    }
+
+    .landing-card-header {
+        background: linear-gradient(135deg, #1565C0 0%, #0d47a1 100%);
+        color: #ffffff;
+        padding: 1.5rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .landing-card-header .header-content {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .landing-card-header .material-icons-round {
+        font-size: 2rem;
+    }
+
+    .landing-card-header h4 {
+        margin: 0;
+        font-weight: 700;
+        font-size: 1.25rem;
+        line-height: 1.3;
+    }
+
+    .landing-card-header .badge {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
+    }
+
+    .landing-card-body {
+        padding: 2rem;
+    }
+
+    .landing-step-indicator {
+        display: inline-flex;
+        align-items: center;
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 2rem;
+        padding: 0.5rem 1rem 0.5rem 0.75rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .landing-step-indicator .step-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .landing-step-indicator .step-item.active {
+        color: #0d6efd;
+    }
+
+    .landing-step-indicator .step-item.completed {
+        color: #198754;
+    }
+
+    .landing-step-indicator .step-item.pending {
+        color: #6c757d;
+    }
+
+    .landing-step-indicator .step-badge {
+        width: 24px;
+        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        font-size: 0.7rem;
+        font-weight: 700;
+    }
+
+    .landing-step-indicator .step-badge.active {
+        background: #0d6efd;
+        color: #ffffff;
+    }
+
+    .landing-step-indicator .step-badge.completed {
+        background: #198754;
+        color: #ffffff;
+    }
+
+    .landing-step-indicator .step-badge.pending {
+        background: #e9ecef;
+        color: #6c757d;
+        border: 1px solid #dee2e6;
+    }
+
+    .landing-step-indicator .step-separator {
+        color: #dee2e6;
+        font-size: 1rem;
+        margin: 0 0.25rem;
+    }
+
+    .landing-instruction {
+        color: #6c757d;
+        font-size: 1rem;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
+    }
+
+    .landing-search-form {
+        margin-top: 1rem;
+    }
+
+    .landing-search-form .form-label {
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.875rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .landing-search-form .form-select,
+    .landing-search-form .form-control {
+        height: 48px;
+        border-radius: 8px;
+        font-size: 1rem;
+        border: 1px solid #dee2e6;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .landing-search-form .form-select:focus,
+    .landing-search-form .form-control:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    }
+
+    .landing-search-form .input-group-text {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-right: none;
+        border-radius: 8px 0 0 8px;
+        color: #6c757d;
+    }
+
+    .landing-search-form .input-group .form-control {
+        border-radius: 0 8px 8px 0;
+        border-left: none;
+    }
+
+    .landing-search-form .btn-continue {
+        height: 48px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 1rem;
+        background: linear-gradient(135deg, #1565C0 0%, #0d47a1 100%);
+        border: none;
+        box-shadow: 0 4px 12px rgba(21, 101, 192, 0.3);
+        transition: all 0.2s ease;
+    }
+
+    .landing-search-form .btn-continue:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(21, 101, 192, 0.4);
+    }
+
+    .landing-search-form .btn-continue:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .landing-search-form .btn-continue .spinner-border {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .landing-result-message {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        border-radius: 8px;
+        display: none;
+    }
+
+    .landing-result-message.show {
+        display: block;
+        animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .landing-result-message.success {
+        background: #f6fcf8;
+        border: 2px solid #198754;
+        color: #146c2e;
+    }
+
+    .landing-result-message.error {
+        background: #fef2f2;
+        border: 2px solid #dc3545;
+        color: #991b1b;
+    }
+
+    .landing-result-message.warning {
+        background: #fffbeb;
+        border: 2px solid #ffc107;
+        color: #854d0e;
+    }
+
+    .landing-result-message .result-header {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .landing-result-message .result-icon {
+        font-size: 1.5rem;
+        flex-shrink: 0;
+    }
+
+    .landing-result-message .result-title {
+        font-weight: 700;
+        font-size: 1rem;
+    }
+
+    .landing-result-message .result-details {
+        font-size: 0.875rem;
+        opacity: 0.9;
+    }
+
+    .landing-result-message .result-actions {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .landing-result-message .btn {
+        border-radius: 6px;
+        font-weight: 600;
+    }
+
+    @media (max-width: 576px) {
+        .landing-card-header {
+            padding: 1.25rem 1.5rem;
+        }
+
+        .landing-card-header h4 {
+            font-size: 1.1rem;
+        }
+
+        .landing-card-body {
+            padding: 1.5rem;
+        }
+
+        .landing-step-indicator {
+            padding: 0.5rem 0.75rem;
+        }
+
+        .landing-step-indicator .step-name {
+            display: none;
+        }
+
+        .landing-search-form .form-select,
+        .landing-search-form .form-control,
+        .landing-search-form .btn-continue {
+            height: 46px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="landing-container">
+        <div class="landing-card">
+            <!-- Header -->
+            <div class="landing-card-header">
+                <div class="header-content">
+                    <span class="material-icons-round">manage_search</span>
+                    <h4>Find Your Registration / Continue Registration</h4>
+                </div>
+                <span class="badge bg-white text-primary fw-semibold px-3 py-2 rounded-pill">Resume Unfinished</span>
+            </div>
+
+            <!-- Card Body -->
+            <div class="landing-card-body">
+                <!-- Step Indicator -->
+                <div class="landing-step-indicator" role="progressbar" aria-label="Registration steps">
+                    <span class="step-item active">
+                        <span class="step-badge active">1</span>
+                        <span class="step-name">Form</span>
+                    </span>
+                    <span class="material-icons-round step-separator">arrow_forward</span>
+                    <span class="step-item pending">
+                        <span class="step-badge pending">2</span>
+                        <span class="step-name">Submit</span>
+                    </span>
+                </div>
+
+                <!-- Instruction -->
+                <p class="landing-instruction">
+                    Please fill out all mandatory fields carefully. Your data will be temporarily saved for your review.
+                </p>
+
+                <p class="text-muted small mb-4">
+                    If you previously started an application or wish to verify your submission status, enter your 
+                    <strong>Aadhaar Number</strong> or <strong>Email Address</strong> below:
+                </p>
+
+                <!-- Search Form -->
+                <form id="landingSearchForm" class="landing-search-form" novalidate data-find-url="{% url 'find_registration' %}" data-registration-url="{% url 'registration' %}">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-lg-3 col-md-4 col-sm-12">
+                            <label for="findSearchBy" class="form-label">
+                                Search By <span class="text-danger">*</span>
+                            </label>
+                            <select id="findSearchBy" name="search_by" class="form-select fw-semibold" required>
+                                <option value="aadhaar" selected>Aadhaar Number</option>
+                                <option value="email">Email Address</option>
+                            </select>
+                        </div>
+
+                        <div class="col-lg-6 col-md-5 col-sm-12">
+                            <label for="findSearchInput" id="findSearchLabel" class="form-label">
+                                Enter your Aadhaar Number <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group has-validation">
+                                <span class="input-group-text" id="findInputIcon">
+                                    <span class="material-icons-round fs-5">fingerprint</span>
+                                </span>
+                                <input type="text" 
+                                       id="findSearchInput" 
+                                       name="search_value" 
+                                       class="form-control" 
+                                       placeholder="Enter 12-digit Aadhaar Number"
+                                       maxlength="12"
+                                       inputmode="numeric"
+                                       autocomplete="off"
+                                       required>
+                                <div class="invalid-feedback" id="findSearchError"></div>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 col-md-3 col-sm-12">
+                            <label class="form-label d-block invisible">Continue</label>
+                            <button type="submit" 
+                                    id="btnContinueFind" 
+                                    class="btn btn-primary btn-continue w-100 d-flex align-items-center justify-content-center gap-2"
+                                    disabled>
+                                <span id="btnContinueFindText">Continue</span>
+                                <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Result Message Container -->
+                <div id="landingResultContainer" class="landing-result-message" role="alert" aria-live="polite"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'registration/landing.js' %}"></script>
+{% endblock %}

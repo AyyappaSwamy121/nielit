@@ -1,0 +1,19 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.env
+.env
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.idea/
+.vscode/
+*.sqlite3
+*.zip
+*.jpg
+*.png
+*.jpeg
+!CSC LOGO.png
+!static/logo.png

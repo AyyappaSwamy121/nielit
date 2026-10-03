@@ -1,0 +1,4935 @@
+{% extends 'public_base.html' %}
+{% load static %}
+
+{% block title %}Student Registration | {{ platform_settings.organization_name|default:'Council for Skills and Competencies' }}{% endblock %}
+{% block meta_description %}Apply online for training and skill development programs through the {{ platform_settings.organization_name|default:'Council for Skills and Competencies' }} student registration portal.{% endblock %}
+
+{% block extra_css %}
+<style>
+    #education-details .form-select {
+        width: 100%;
+        min-height: 46px;
+
+        padding: 10px 42px 10px 14px;
+
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+
+        background-color: #ffffff;
+        color: #212529;
+
+        font-size: 0.9rem;
+        font-weight: 500;
+
+        cursor: pointer;
+
+        transition:
+            border-color 0.2s ease,
+            box-shadow 0.2s ease,
+            background-color 0.2s ease;
+    }
+
+    #education-details .form-select:hover {
+        border-color: #b6c2d9;
+    }
+
+    #education-details .form-select:focus {
+        border-color: #86b7fe;
+
+        box-shadow:
+            0 0 0 0.15rem rgba(13, 110, 253, 0.10);
+
+        outline: none;
+    }
+
+    #education-details .form-select option {
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+
+    #education-details .form-select option:first-child {
+        color: #6c757d;
+    }
+
+    @media (max-width: 576px) {
+
+        #education-details .form-select {
+            min-height: 44px;
+            padding: 9px 38px 9px 12px;
+            font-size: 0.85rem;
+        }
+
+    }
+
+    body {
+        background-color: #f8f9fa;
+    }
+
+    .sticky-sidebar {
+        position: sticky;
+        top: 2rem;
+        z-index: 1000;
+    }
+
+    .nav-pills .nav-link {
+        color: #495057;
+        font-weight: 500;
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .nav-pills .nav-link.active {
+        background-color: #0d6efd;
+        color: white;
+        box-shadow: 0 4px 6px rgba(13, 110, 253, 0.2);
+    }
+
+    .nav-pills .nav-link:hover:not(.active):not(.disabled) {
+        background-color: #e9ecef;
+    }
+
+    .nav-pills .nav-link.disabled {
+        opacity: 0.45;
+        cursor: not-allowed !important;
+        pointer-events: none;
+    }
+
+    .form-section {
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        padding: 2.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        transition: opacity 0.3s ease;
+    }
+
+    /* Locked section appearance */
+    .form-section.section-locked {
+        opacity: 0.5;
+        pointer-events: none;
+        user-select: none;
+    }
+
+    .form-section.section-locked input,
+    .form-section.section-locked select,
+    .form-section.section-locked textarea,
+    .form-section.section-locked button {
+        cursor: not-allowed !important;
+    }
+
+    .ts-wrapper,
+    .ts-control {
+        width: 100% !important;
+    }
+
+    .section-title {
+        background-color: #1565C0;
+        /* professional dark blue */
+        color: #ffffff;
+        /* white text */
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 6px rgba(21, 101, 192, 0.08);
+        transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease;
+    }
+
+    .section-title:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 14px rgba(21, 101, 192, 0.12);
+    }
+
+    .section-title .material-icons-round {
+        color: #ffffff;
+        font-size: 1.15rem;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    }
+
+    .converter-help-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        background: #eef5ff;
+        border: 1px solid #b6d4fe;
+        border-left: 4px solid #0d6efd;
+        border-radius: 0.5rem;
+        padding: 12px 16px;
+        margin: 6px 0 16px;
+    }
+
+    .converter-help-content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+    }
+
+    .converter-help-icon {
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #0d6efd;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .converter-help-icon .material-icons-round {
+        font-size: 20px;
+    }
+
+    .converter-help-text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.3;
+    }
+
+    .converter-help-text span {
+        font-size: 0.85rem;
+        color: #5b6b83;
+    }
+
+    .converter-help-btn {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #0d6efd;
+        color: #ffffff;
+        font-weight: 600;
+        text-decoration: none;
+        padding: 8px 14px;
+        border-radius: 0.375rem;
+        border: 1px solid #0d6efd;
+        transition: background-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        white-space: nowrap;
+    }
+
+    .converter-help-btn:hover {
+        background: #0b5ed7;
+        border-color: #0a58ca;
+        color: #ffffff;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+
+    .converter-external {
+        font-size: 1.05rem;
+        line-height: 1;
+    }
+
+    @media (max-width: 575.98px) {
+        .converter-help-btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+
+    .cgpa-helper {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        column-gap: 8px;
+        row-gap: 4px;
+        margin-top: 6px;
+        font-size: 0.85rem;
+    }
+
+    .cgpa-helper span {
+        color: #5b6b83;
+    }
+
+    .cgpa-calc-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        color: #0d6efd;
+        font-weight: 600;
+        text-decoration: none;
+        border-bottom: 1px dashed #86b7fe;
+        transition: color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+        white-space: nowrap;
+    }
+
+    .cgpa-calc-link:hover {
+        color: #0b5ed7;
+        border-bottom-color: #0b5ed7;
+    }
+
+    .file-upload-wrapper {
+        position: relative;
+    }
+
+    .file-upload-wrapper input[type="file"] {
+        position: absolute;
+        left: -9999px;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .file-upload-control {
+        display: flex;
+        align-items: stretch;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        overflow: hidden;
+        background-color: #ffffff;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+
+    .file-upload-control:hover {
+        border-color: #86b7fe;
+    }
+
+    .file-upload-control:focus-within {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    }
+
+    .file-upload-btn {
+        background-color: #e9ecef;
+        border: none;
+        padding: 0.55rem 1rem;
+        font-weight: 500;
+        color: #495057;
+        cursor: pointer;
+        white-space: nowrap;
+        border-right: 1px solid #dee2e6;
+        transition: background-color 0.15s ease-in-out;
+        user-select: none;
+        display: flex;
+        align-items: center;
+    }
+
+    .file-upload-btn:hover {
+        background-color: #dee2e6;
+    }
+
+    .file-upload-filename {
+        flex: 1;
+        padding: 0.55rem 0.9rem;
+        color: #495057;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-size: 0.9375rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .file-upload-filename.placeholder {
+        color: #6c757d;
+    }
+
+    .upload-status-success {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #198754;
+        font-weight: 600;
+        font-size: 0.875rem;
+        margin-top: 0.4rem;
+    }
+
+    .upload-status-success .material-icons-round {
+        font-size: 1.1rem;
+    }
+
+    .upload-action-group {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.4rem;
+        flex-wrap: wrap;
+    }
+
+    .preview-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.65rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        border-radius: 0.375rem;
+        text-decoration: none;
+        transition: all 0.15s ease;
+    }
+
+    .preview-btn-outline {
+        color: #0b5ed7;
+        border: 1px solid #0b5ed7;
+        background-color: transparent;
+    }
+
+    .preview-btn-outline:hover {
+        background-color: #0b5ed7;
+        color: white;
+        text-decoration: none;
+    }
+
+    .replace-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.65rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        color: #198754;
+        border: 1px solid #198754;
+        background-color: transparent;
+        user-select: none;
+    }
+
+    .replace-btn:hover {
+        background-color: #198754;
+        color: white;
+        text-decoration: none;
+    }
+
+    .declaration-section {
+        padding: 1.5rem;
+        border: 1px solid #dee2e6;
+        border-radius: 0.75rem;
+        background-color: #fafbfc;
+    }
+
+    .declaration-section .form-check {
+        padding-left: 2rem;
+    }
+
+    .declaration-section .form-check-input {
+        width: 1.3rem;
+        height: 1.3rem;
+        margin-top: 0.15rem;
+        margin-left: -2rem;
+    }
+
+    .declaration-section .form-check-label {
+        font-weight: 500;
+        color: #343a40;
+        line-height: 1.6;
+    }
+
+    .spinner-inline {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #0dcaf0;
+        font-weight: 600;
+        font-size: 0.875rem;
+        margin-top: 0.4rem;
+    }
+
+    .preview-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.72);
+        backdrop-filter: blur(3px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        padding: 1.25rem;
+    }
+
+    .preview-modal.open {
+        display: flex;
+    }
+
+    .preview-modal-dialog {
+        width: min(1100px, 100%);
+        max-height: 92vh;
+        background: #ffffff;
+        border-radius: 0.85rem;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: previewFadeIn 0.22s ease-out;
+    }
+
+    @keyframes previewFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px) scale(0.985);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .preview-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.9rem 1.25rem;
+        border-bottom: 1px solid #e5e7eb;
+        gap: 1rem;
+        background: #fafbfc;
+    }
+
+    .preview-modal-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #111827;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .preview-modal-close {
+        border: none;
+        background: transparent;
+        color: #4b5563;
+        width: 2.25rem;
+        height: 2.25rem;
+        min-width: 2.25rem;
+        min-height: 2.25rem;
+        border-radius: 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        user-select: none;
+    }
+
+    .preview-modal-close:hover {
+        background: #fee2e2;
+        color: #dc2626;
+    }
+
+    .preview-modal-body {
+        flex: 1 1 auto;
+        overflow: auto;
+        padding: 1rem;
+        background: #f3f4f6;
+    }
+
+    .preview-modal-image-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100%;
+    }
+
+    .preview-modal-image {
+        max-width: 100%;
+        max-height: calc(92vh - 120px);
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        border-radius: 0.5rem;
+        background: #fff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        display: block;
+    }
+
+    .preview-modal-pdf-wrapper {
+        width: 100%;
+        height: calc(92vh - 120px);
+        min-height: 420px;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .preview-modal-pdf-wrapper iframe,
+    .preview-modal-pdf-wrapper object {
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: block;
+    }
+
+    .preview-modal-message {
+        padding: 2.5rem 1.5rem;
+        text-align: center;
+        color: #4b5563;
+        background: #fff;
+        border-radius: 0.5rem;
+    }
+
+    .preview-modal-message .material-icons-round {
+        font-size: 3rem;
+        color: #9ca3af;
+        margin-bottom: 0.75rem;
+    }
+
+    .preview-modal-message p {
+        margin: 0;
+        font-weight: 500;
+    }
+
+    .preview-modal-message .fallback-link {
+        margin-top: 1rem;
+        display: inline-block;
+    }
+
+    @media (max-width: 576px) {
+        .preview-modal {
+            padding: 0.5rem;
+        }
+
+        .preview-modal-dialog {
+            border-radius: 0.65rem;
+        }
+
+        .preview-modal-header {
+            padding: 0.75rem 0.9rem;
+        }
+
+        .preview-modal-body {
+            padding: 0.6rem;
+        }
+
+        .preview-modal-pdf-wrapper {
+            height: 68vh;
+            min-height: 320px;
+        }
+
+        .preview-modal-image {
+            max-height: 68vh;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row g-5 mt-3">
+
+    <!-- Sticky Sidebar Navigation -->
+    <div class="col-lg-3 d-none d-lg-block">
+        <div class="sticky-sidebar bg-white p-4 rounded-4 shadow-sm border">
+            <h5 class="fw-bold mb-4 text-primary">Form Sections</h5>
+            <div class="nav flex-column nav-pills" id="form-nav">
+                <a class="nav-link active" id="nav-link-personal-details" href="#personal-details"
+                    data-section="personal-details">
+                    <span class="material-icons-round align-middle me-2 fs-5">person</span> Personal Details
+                </a>
+                <a class="nav-link disabled" id="nav-link-contact-details" href="#contact-details"
+                    data-section="contact-details">
+                    <span class="material-icons-round align-middle me-2 fs-5">contact_mail</span> Contact Details
+                </a>
+                <a class="nav-link disabled" id="nav-link-education-details" href="#education-details"
+                    data-section="education-details">
+                    <span class="material-icons-round align-middle me-2 fs-5">school</span> Educational Details
+                </a>
+                <a class="nav-link disabled" id="nav-link-document-uploads" href="#document-uploads"
+                    data-section="document-uploads">
+                    <span class="material-icons-round align-middle me-2 fs-5">upload_file</span> Document Uploads
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Form Area -->
+    <div class="col-lg-9">
+
+        <div class="mb-4">
+            <h2 class="fw-bolder">Student Registration Application</h2>
+
+            <div class="d-inline-flex align-items-center bg-white px-3 py-2 rounded-pill shadow-sm border mt-2 mb-3">
+                <span class="d-inline-flex align-items-center fw-bold text-primary">
+                    <span class="badge bg-primary text-white rounded-circle me-2"
+                        style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">1</span>
+                    Form
+                </span>
+                <span class="material-icons-round text-muted mx-2" style="font-size: 18px;">arrow_forward</span>
+                <span class="d-inline-flex align-items-center fw-semibold text-secondary">
+                    <span class="badge bg-light text-secondary border rounded-circle me-2"
+                        style="width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">2</span>
+                    Submit
+                </span>
+            </div>
+
+            {% if messages %}
+            <div class="alert alert-danger shadow-sm border-0">
+                <ul class="mb-0">
+                    {% for message in messages %}
+                    <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <p class="text-muted fs-5">Please fill out all mandatory fields carefully. Your data will be temporarily
+                saved for your review.</p>
+        </div>
+
+        {% if resumed_banner %}
+        <div class="alert alert-success alert-dismissible fade show border-2 rounded-3 p-3 shadow-sm mb-4" role="alert" style="border-color: #198754 !important; background-color: #f6fcf8;">
+            <div class="d-flex align-items-center gap-3">
+                <span class="material-icons-round fs-2 text-success">restore_page</span>
+                <div>
+                    <h6 class="fw-bold text-success mb-1">Your saved registration details have been found.</h6>
+                    <div class="text-secondary small">You can continue your registration from where you left off. All your previously entered details and uploaded documents have been restored.</div>
+                </div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+        {% endif %}
+
+        <form id="registrationForm" method="POST" action="{% url 'submit_application' %}" enctype="multipart/form-data"
+            novalidate>
+            {% csrf_token %}
+
+            <!-- SECTION 1: Personal Details (config-driven) -->
+            {% if fb_section_visible_personal %}
+            <div class="form-section" id="personal-details">
+                <h4 class="section-title"><span class="material-icons-round me-2">person</span> Personal Details</h4>
+                <div class="form-grid">
+                    {% for group in fb_sections %}
+                    {% if group.section.slug == 'personal-details' %}
+                    {% for field in group.fields %}
+                    {% include 'registration/_field.html' %}
+                    {% endfor %}
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                <div class="section-footer d-flex justify-content-end align-items-center mt-4 pt-3 border-top">
+                    <button type="button"
+                        class="btn btn-primary btn-lg px-4 py-2 fw-bold rounded-pill shadow-sm step-btn-next"
+                        data-section="personal-details">
+                        Save &amp; Continue <span class="material-icons-round ms-1 align-middle">arrow_forward</span>
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- SECTION 2: Contact Details (config-driven) -->
+            {% if fb_section_visible_contact %}
+            <div class="form-section" id="contact-details">
+                <h4 class="section-title"><span class="material-icons-round me-2">contact_mail</span> Contact Details
+                </h4>
+                <div class="form-grid">
+                    {% for group in fb_sections %}
+                    {% if group.section.slug == 'contact-details' %}
+                    {% for field in group.fields %}
+                    {% include 'registration/_field.html' %}
+                    {% endfor %}
+                    {% endif %}
+                    {% endfor %}
+                </div>
+                <div class="d-flex justify-content-end align-items-center mt-4 pt-3 border-top">
+                    <button type="button"
+                        class="btn btn-primary btn-lg px-4 py-2 fw-bold rounded-pill shadow-sm step-btn-next"
+                        data-section="contact-details">
+                        Save &amp; Continue <span class="material-icons-round ms-1 align-middle">arrow_forward</span>
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if fb_section_visible_education %}
+            <div class="form-section" id="education-details">
+
+                <h4 class="section-title">
+                    <span class="material-icons-round me-2">school</span>
+                    Educational Details
+                </h4>
+
+                <div class="form-grid">
+
+                    {% for group in fb_sections %}
+                    {% if group.section.slug == 'education-details' %}
+
+                    {% for field in group.fields %}
+                    {% include 'registration/_field.html' %}
+                    {% endfor %}
+
+                    {% endif %}
+                    {% endfor %}
+
+                </div>
+
+                <div class="d-flex justify-content-end align-items-center mt-4 pt-3 border-top">
+                    <button type="button"
+                        class="btn btn-primary btn-lg px-4 py-2 fw-bold rounded-pill shadow-sm step-btn-next"
+                        data-section="education-details">
+                        Save &amp; Continue <span class="material-icons-round ms-1 align-middle">arrow_forward</span>
+                    </button>
+                </div>
+
+            </div>
+            {% endif %}
+            <!-- ============================================================
+     DOCUMENT UPLOADS
+     ============================================================ -->
+            <div class="form-section" id="document-uploads">
+
+                <h4 class="section-title">
+                    <span class="material-icons-round me-2">upload_file</span>
+                    Document Uploads
+                </h4>
+
+                {% if fb_section_visible_documents %}
+
+                <!-- ========================================================
+         DOCUMENT CONVERTER HELP CARD
+         ======================================================== -->
+                <div class="converter-help-card">
+
+                    <div class="converter-help-content">
+
+                        <div class="converter-help-icon">
+                            <span class="material-icons-round">bolt</span>
+                        </div>
+
+                        <div class="converter-help-text">
+                            <strong>
+                                Need to compress your image or document?
+                            </strong>
+
+                            <span>
+                                Reduce file size and prepare your document
+                                before uploading.
+                            </span>
+                        </div>
+
+                    </div>
+
+                    <a href="{% url 'tools' %}" target="_blank" rel="noopener noreferrer" class="converter-help-btn">
+
+                        Open Image &amp; Document Converter
+
+                        <span class="converter-external">
+                            &#x2197;
+                        </span>
+
+                    </a>
+
+                </div>
+
+                {% endif %}
+
+
+                <!-- ========================================================
+         DOCUMENT GRID
+         ======================================================== -->
+                <div class="form-grid">
+
+                    {% if fb_section_visible_documents %}
+
+
+                    <!-- ====================================================
+             1. PASSPORT-SIZE PHOTOGRAPH
+             JPG/JPEG - MAX 500 KB
+             ==================================================== -->
+                    {% if fb_field_visible.upload_passport_photo %}
+
+                    <div class="form-group document-upload-group" id="group-passport-photo"
+                        {% if db_documents.Passport_Photo %} data-uploaded-src="{{ db_documents.Passport_Photo.file_url }}" data-uploaded-type="image" data-uploaded-name="Passport Size Photograph"
+                        {% elif temp_files.Passport_Photo %} data-uploaded-src="{{ temp_files.Passport_Photo.url }}" data-uploaded-type="image" data-uploaded-name="Passport Size Photograph" {% endif %}>
+
+                        <label for="upload_passport_photo" class="fw-bold mb-2">
+
+                            Upload Photo / फोटो अपलोड करें *
+
+                        </label>
+
+
+                        {% if db_documents.Passport_Photo %}
+
+                        <div class="file-upload-control">
+
+                            <label class="file-upload-btn" for="upload_passport_photo">
+                                Choose file
+                            </label>
+
+                            <div class="file-upload-filename" id="filename-upload_passport_photo">
+
+                                {{ db_documents.Passport_Photo.filename }}
+
+                            </div>
+
+                        </div>
+
+                        <input type="file" id="upload_passport_photo" name="upload_passport_photo"
+                            accept=".jpg,.jpeg,image/jpeg">
+
+
+                        <div class="upload-status-success">
+
+                            <span class="material-icons-round">
+                                check_circle
+                            </span>
+
+                            <span>
+                                Already uploaded
+                            </span>
+
+                        </div>
+
+
+                        <div class="upload-action-group">
+
+                            <button type="button" class="preview-btn preview-btn-outline" data-preview-passport
+                                data-for-input="upload_passport_photo">
+
+                                Preview
+
+                            </button>
+
+                            <label class="replace-btn" for="upload_passport_photo">
+
+                                <span class="material-icons-round">
+                                    refresh
+                                </span>
+
+                                Replace
+
+                            </label>
+
+                        </div>
+
+
+                        {% else %}
+
+                        <div class="file-upload-control">
+
+                            <label class="file-upload-btn" for="upload_passport_photo">
+
+                                Choose file
+
+                            </label>
+
+                            <div class="file-upload-filename placeholder" id="filename-upload_passport_photo">
+
+                                No file chosen
+
+                            </div>
+
+                        </div>
+
+                        <input type="file" id="upload_passport_photo" name="upload_passport_photo"
+                            accept=".jpg,.jpeg,image/jpeg" required>
+
+                        {% endif %}
+
+
+                        <div class="upload-requirements">
+
+                            <span class="material-icons-round">
+                                photo_camera
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    Photo Requirements
+                                </strong>
+
+                                <ul>
+                                    <li>
+                                        Only <strong>JPG/JPEG</strong> image allowed
+                                    </li>
+
+                                    <li>
+                                        Maximum file size:
+                                        <strong>500 KB</strong>
+                                    </li>
+                                </ul>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    {% endif %}
+
+
+                    <!-- ====================================================
+             2. STUDENT SIGNATURE
+             JPG/JPEG - MAX 500 KB
+             ==================================================== -->
+                    {% if fb_field_visible.upload_signature %}
+
+                    <div class="form-group document-upload-group" id="group-signature" {% if db_documents.Signature %}
+                        data-uploaded-src="{{ db_documents.Signature.file_url }}" data-uploaded-type="image"
+                        data-uploaded-name="Student Signature" {% elif temp_files.Signature %}
+                        data-uploaded-src="{{ temp_files.Signature.url }}" data-uploaded-type="image"
+                        data-uploaded-name="Student Signature" {% endif %}>
+
+                        <label for="upload_signature" class="fw-bold mb-2">
+
+                            Student Signature / हस्ताक्षर अपलोड करें *
+
+                        </label>
+
+
+                        {% if db_documents.Signature %}
+
+                        <div class="file-upload-control">
+
+                            <label class="file-upload-btn" for="upload_signature">
+
+                                Choose file
+
+                            </label>
+
+                            <div class="file-upload-filename" id="filename-upload_signature">
+
+                                {{ db_documents.Signature.filename }}
+
+                            </div>
+
+                        </div>
+
+                        <input type="file" id="upload_signature" name="upload_signature" accept=".jpg,.jpeg,image/jpeg">
+
+
+                        <div class="upload-status-success">
+
+                            <span class="material-icons-round">
+                                check_circle
+                            </span>
+
+                            <span>
+                                Already uploaded
+                            </span>
+
+                        </div>
+
+
+                        <div class="upload-action-group">
+
+                            <button type="button" class="preview-btn preview-btn-outline" data-preview-signature
+                                data-for-input="upload_signature">
+
+                                Preview
+
+                            </button>
+
+                            <label class="replace-btn" for="upload_signature">
+
+                                <span class="material-icons-round">
+                                    refresh
+                                </span>
+
+                                Replace
+
+                            </label>
+
+                        </div>
+
+
+                        {% else %}
+
+                        <div class="file-upload-control">
+
+                            <label class="file-upload-btn" for="upload_signature">
+
+                                Choose file
+
+                            </label>
+
+                            <div class="file-upload-filename placeholder" id="filename-upload_signature">
+
+                                No file chosen
+
+                            </div>
+
+                        </div>
+
+                        <input type="file" id="upload_signature" name="upload_signature" accept=".jpg,.jpeg,image/jpeg"
+                            required>
+
+                        {% endif %}
+
+
+                        <div class="upload-requirements">
+
+                            <span class="material-icons-round">
+                                draw
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    Student Signature Requirements
+                                </strong>
+
+                                <ul>
+
+                                    <li>
+                                        Only <strong>JPG/JPEG</strong> image allowed
+                                    </li>
+
+                                    <li>
+                                        Maximum file size:
+                                        <strong>500 KB</strong>
+                                    </li>
+
+                                </ul>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    {% endif %}
+
+
+                    <!-- ====================================================
+             3. AADHAAR CARD
+             PDF - MAX 1 MB
+             ==================================================== -->
+                    {% if fb_field_visible.upload_aadhaar %}
+
+                    <div class="form-group document-upload-group" id="aadhaar_container" {% if db_documents.Aadhaar %}
+                        data-uploaded-src="{{ db_documents.Aadhaar.file_url }}" data-uploaded-type="pdf"
+                        data-uploaded-name="Aadhaar Card" {% elif temp_files.Aadhaar %}
+                        data-uploaded-src="{{ temp_files.Aadhaar.url }}" data-uploaded-type="pdf"
+                        data-uploaded-name="Aadhaar Card" {% endif %}>
+
+                        <label for="upload_aadhaar" class="fw-bold mb-2">
+
+                            Aadhaar Card / आधार कार्ड *
+
+                        </label>
+
+
+                        {% if db_documents.Aadhaar %}
+
+                        <div id="aadhaar_initial_control" class="file-upload-control">
+
+                            <label class="file-upload-btn" for="upload_aadhaar">
+
+                                Choose file
+
+                            </label>
+
+                            <div class="file-upload-filename" id="filename-upload_aadhaar">
+
+                                {{ db_documents.Aadhaar.filename }}
+
+                            </div>
+
+                        </div>
+
+                        <input type="file" id="upload_aadhaar" name="upload_aadhaar" accept=".pdf,application/pdf">
+
+
+                        <div class="upload-status-success">
+
+                            <span class="material-icons-round">
+                                check_circle
+                            </span>
+
+                            <span>
+                                Already uploaded
+                            </span>
+
+                        </div>
+
+
+                        <div class="upload-action-group">
+
+                            <button type="button" class="preview-btn preview-btn-outline" data-preview-aadhaar
+                                data-for-input="upload_aadhaar">
+
+                                Preview
+
+                            </button>
+
+                            <label class="replace-btn" for="upload_aadhaar">
+
+                                <span class="material-icons-round">
+                                    refresh
+                                </span>
+
+                                Replace
+
+                            </label>
+
+                        </div>
+
+
+                        {% else %}
+
+                        <div id="aadhaar_initial_control" class="file-upload-control">
+
+                            <label class="file-upload-btn" for="upload_aadhaar">
+
+                                Choose file
+
+                            </label>
+
+                            <div class="file-upload-filename placeholder" id="filename-upload_aadhaar">
+
+                                No file chosen
+
+                            </div>
+
+                        </div>
+
+                        <input type="file" id="upload_aadhaar" name="upload_aadhaar" accept=".pdf,application/pdf"
+                            required>
+
+                        {% endif %}
+
+
+                        <div class="upload-requirements pdf-requirement">
+
+                            <span class="material-icons-round">
+                                picture_as_pdf
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    Aadhaar PDF Requirements
+                                </strong>
+
+                                <ul>
+
+                                    <li>
+                                        Only <strong>PDF</strong> file allowed
+                                    </li>
+
+                                    <li>
+                                        Maximum file size:
+                                        <strong>1 MB</strong>
+                                    </li>
+
+                                </ul>
+
+                            </div>
+
+                        </div>
+
+
+                        <div id="aadhaar_spinner" class="spinner-inline d-none">
+
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true">
+                            </span>
+
+                            <span>
+                                Compressing PDF... Please wait.
+                            </span>
+
+                        </div>
+
+
+                        <div id="aadhaar_success" class="upload-status-success d-none">
+
+                            <span class="material-icons-round">
+                                check_circle
+                            </span>
+
+                            <span id="aadhaar_success_text">
+                                Preview loaded
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    {% endif %}
+
+
+                    <!-- ====================================================
+             4. RIGHT THUMB IMPRESSION
+             Existing backend field retained as upload_left_thumb
+             JPG/JPEG - MAX 500 KB
+             ==================================================== -->
+                    {% if fb_field_visible.upload_left_thumb %}
+
+                    <div class="form-group document-upload-group" id="group-thumb-impression"
+                        {% if db_documents.Left_Thumb %} data-uploaded-src="{{ db_documents.Left_Thumb.file_url }}" data-uploaded-type="image" data-uploaded-name="Right Thumb Impression"
+                        {% elif temp_files.Left_Thumb %} data-uploaded-src="{{ temp_files.Left_Thumb.url }}" data-uploaded-type="image" data-uploaded-name="Right Thumb Impression" {% endif %}>
+
+                        <label for="upload_left_thumb" class="fw-bold mb-2">
+
+                            Right Thumb Impression /
+                            दाहिने हाथ के अंगूठे का निशान अपलोड करें *
+
+                        </label>
+
+
+                        {% if db_documents.Left_Thumb %}
+
+                        <div class="file-upload-control">
+
+                            <label class="file-upload-btn" for="upload_left_thumb">
+
+                                Choose file
+
+                            </label>
+
+                            <div class="file-upload-filename" id="filename-upload_left_thumb">
+
+                                {{ db_documents.Left_Thumb.filename }}
+
+                            </div>
+
+                        </div>
+
+                        <input type="file" id="upload_left_thumb" name="upload_left_thumb"
+                            accept=".jpg,.jpeg,image/jpeg">
+
+
+                        <div class="upload-status-success">
+
+                            <span class="material-icons-round">
+                                check_circle
+                            </span>
+
+                            <span>
+                                Already uploaded
+                            </span>
+
+                        </div>
+
+
+                        <div class="upload-action-group">
+
+                            <button type="button" class="preview-btn preview-btn-outline" data-preview-thumb
+                                data-for-input="upload_left_thumb">
+
+                                Preview
+
+                            </button>
+
+                            <label class="replace-btn" for="upload_left_thumb">
+
+                                <span class="material-icons-round">
+                                    refresh
+                                </span>
+
+                                Replace
+
+                            </label>
+
+                        </div>
+
+
+                        {% else %}
+
+                        <div class="file-upload-control">
+
+                            <label class="file-upload-btn" for="upload_left_thumb">
+
+                                Choose file
+
+                            </label>
+
+                            <div class="file-upload-filename placeholder" id="filename-upload_left_thumb">
+
+                                No file chosen
+
+                            </div>
+
+                        </div>
+
+                        <input type="file" id="upload_left_thumb" name="upload_left_thumb"
+                            accept=".jpg,.jpeg,image/jpeg" required>
+
+                        {% endif %}
+
+
+                        <div class="upload-requirements">
+
+                            <span class="material-icons-round">
+                                fingerprint
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    Right Thumb Impression Requirements
+                                </strong>
+
+                                <ul>
+
+                                    <li>
+                                        Only <strong>JPG/JPEG</strong> image allowed
+                                    </li>
+
+                                    <li>
+                                        Maximum file size:
+                                        <strong>500 KB</strong>
+                                    </li>
+
+                                </ul>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    {% endif %}
+
+
+                    <!-- ====================================================
+             5. APAAR ID / ABC ID
+             JPG/JPEG - MAX 500 KB
+             ==================================================== -->
+                    {% if fb_field_visible.upload_abc_id %}
+
+                    <div class="form-group document-upload-group" id="group-abc-id" {% if db_documents.Abc_id %}
+                        data-uploaded-src="{{ db_documents.Abc_id.file_url }}" data-uploaded-type="image"
+                        data-uploaded-name="APAAR ID / ABC ID" {% elif temp_files.Abc_id %}
+                        data-uploaded-src="{{ temp_files.Abc_id.url }}" data-uploaded-type="image"
+                        data-uploaded-name="APAAR ID / ABC ID" {% endif %}>
+
+                        <label for="upload_abc_id" class="fw-bold mb-2">
+
+                            APAAR ID / ABC ID Screenshot
+                            / अपार आईडी / एबीसी आईडी *
+
+                        </label>
+
+
+                        {% if db_documents.Abc_id %}
+
+                        <div class="file-upload-control">
+
+                            <label class="file-upload-btn" for="upload_abc_id">
+
+                                Choose file
+
+                            </label>
+
+                            <div class="file-upload-filename" id="filename-upload_abc_id">
+
+                                {{ db_documents.Abc_id.filename }}
+
+                            </div>
+
+                        </div>
+
+                        <input type="file" id="upload_abc_id" name="upload_abc_id" accept=".jpg,.jpeg,image/jpeg">
+
+
+                        <div class="upload-status-success">
+
+                            <span class="material-icons-round">
+                                check_circle
+                            </span>
+
+                            <span>
+                                Already uploaded
+                            </span>
+
+                        </div>
+
+
+                        <div class="upload-action-group">
+
+                            <button type="button" class="preview-btn preview-btn-outline" data-preview-abc
+                                data-for-input="upload_abc_id">
+
+                                Preview
+
+                            </button>
+
+                            <label class="replace-btn" for="upload_abc_id">
+
+                                <span class="material-icons-round">
+                                    refresh
+                                </span>
+
+                                Replace
+
+                            </label>
+
+                        </div>
+
+
+                        {% else %}
+
+                        <div class="file-upload-control">
+
+                            <label class="file-upload-btn" for="upload_abc_id">
+
+                                Choose file
+
+                            </label>
+
+                            <div class="file-upload-filename placeholder" id="filename-upload_abc_id">
+
+                                No file chosen
+
+                            </div>
+
+                        </div>
+
+                        <input type="file" id="upload_abc_id" name="upload_abc_id" accept=".jpg,.jpeg,image/jpeg"
+                            required>
+
+                        {% endif %}
+
+
+                        <div class="upload-requirements">
+
+                            <span class="material-icons-round">
+                                badge
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    APAAR ID / ABC ID Requirements
+                                </strong>
+
+                                <ul>
+
+                                    <li>
+                                        Only <strong>JPG/JPEG</strong> image allowed
+                                    </li>
+
+                                    <li>
+                                        Maximum file size:
+                                        <strong>500 KB</strong>
+                                    </li>
+
+                                </ul>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    {% endif %}
+
+
+                    <!-- ====================================================
+             6. DISTINGUISHING MARK
+             ==================================================== -->
+                    {% if fb_field_visible.distinguishing_mark %}
+
+                    <div class="form-group" id="group-distinguishing-mark">
+
+                        <label for="distinguishing_mark" class="fw-bold mb-2">
+
+                            Distinguishing Mark *
+
+                        </label>
+
+                        <div class="file-upload-wrapper">
+
+                            <input type="text" class="form-control text-only" id="distinguishing_mark"
+                                name="distinguishing_mark" placeholder="Enter distinguishing mark if any"
+                                value="{{ form_data.distinguishing_mark }}" minlength="5" maxlength="100" required
+                                inputmode="text" autocomplete="off">
+
+                            <div class="form-text text-muted mt-2">
+                                Enter distinguishing mark if applicable.
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    {% endif %}
+
+
+                    <!-- ====================================================
+             7. FATHER / GUARDIAN SIGNATURE
+             JPG/JPEG - MAX 500 KB
+             ==================================================== -->
+                    {% if fb_field_visible.upload_father_signature %}
+
+                    <div class="form-group document-upload-group" id="group-father-signature"
+                        {% if db_documents.Father_Signature %} data-uploaded-src="{{ db_documents.Father_Signature.file_url }}" data-uploaded-type="image" data-uploaded-name="Father's / Guardian's Signature"
+                        {% elif temp_files.Father_Signature %} data-uploaded-src="{{ temp_files.Father_Signature.url }}" data-uploaded-type="image" data-uploaded-name="Father's / Guardian's Signature" {% endif %}>
+
+                        <label for="upload_father_signature" class="fw-bold mb-2">
+
+                            Father's / Guardian's Signature
+                            / पिता / अभिभावक के हस्ताक्षर *
+
+                        </label>
+
+
+                        {% if db_documents.Father_Signature %}
+
+                        <div class="file-upload-control">
+
+                            <label class="file-upload-btn" for="upload_father_signature">
+
+                                Choose file
+
+                            </label>
+
+                            <div class="file-upload-filename" id="filename-upload_father_signature">
+
+                                {{ db_documents.Father_Signature.filename }}
+
+                            </div>
+
+                        </div>
+
+                        <input type="file" id="upload_father_signature" name="upload_father_signature"
+                            accept=".jpg,.jpeg,image/jpeg">
+
+
+                        <div class="upload-status-success">
+
+                            <span class="material-icons-round">
+                                check_circle
+                            </span>
+
+                            <span>
+                                Already uploaded
+                            </span>
+
+                        </div>
+
+
+                        <div class="upload-action-group">
+
+                            <button type="button" class="preview-btn preview-btn-outline" data-preview-fsig
+                                data-for-input="upload_father_signature">
+
+                                Preview
+
+                            </button>
+
+                            <label class="replace-btn" for="upload_father_signature">
+
+                                <span class="material-icons-round">
+                                    refresh
+                                </span>
+
+                                Replace
+
+                            </label>
+
+                        </div>
+
+
+                        {% else %}
+
+                        <div class="file-upload-control">
+
+                            <label class="file-upload-btn" for="upload_father_signature">
+
+                                Choose file
+
+                            </label>
+
+                            <div class="file-upload-filename placeholder" id="filename-upload_father_signature">
+
+                                No file chosen
+
+                            </div>
+
+                        </div>
+
+                        <input type="file" id="upload_father_signature" name="upload_father_signature"
+                            accept=".jpg,.jpeg,image/jpeg" required>
+
+                        {% endif %}
+
+
+                        <div class="upload-requirements">
+
+                            <span class="material-icons-round">
+                                draw
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    Father's / Guardian's Signature Requirements
+                                </strong>
+
+                                <ul>
+
+                                    <li>
+                                        Only <strong>JPG/JPEG</strong> image allowed
+                                    </li>
+
+                                    <li>
+                                        Maximum file size:
+                                        <strong>500 KB</strong>
+                                    </li>
+
+                                </ul>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    {% endif %}
+
+
+                    <!-- ====================================================
+             8. COMMUNITY CERTIFICATE
+             PDF - MAX 1 MB
+             ==================================================== -->
+                    {% if fb_field_visible.upload_community_certificate %}
+
+                    <div class="form-group document-upload-group" id="group-community-cert"
+                        {% if db_documents.Community_certificate %} data-uploaded-src="{{ db_documents.Community_certificate.file_url }}" data-uploaded-type="pdf" data-uploaded-name="Community Certificate"
+                        {% elif temp_files.Community_certificate %} data-uploaded-src="{{ temp_files.Community_certificate.url }}" data-uploaded-type="pdf" data-uploaded-name="Community Certificate" {% endif %}>
+
+                        <label for="upload_community_certificate" class="fw-bold mb-2">
+
+                            Community Certificate
+                            (SC/ST Candidates Only) *
+
+                        </label>
+
+
+                        {% if db_documents.Community_certificate %}
+
+                        <div class="file-upload-control">
+
+                            <label class="file-upload-btn" for="upload_community_certificate">
+
+                                Choose file
+
+                            </label>
+
+                            <div class="file-upload-filename" id="filename-upload_community_certificate">
+
+                                {{ db_documents.Community_certificate.filename }}
+
+                            </div>
+
+                        </div>
+
+                        <input type="file" id="upload_community_certificate" name="upload_community_certificate"
+                            accept=".pdf,application/pdf">
+
+
+                        <div class="upload-status-success">
+
+                            <span class="material-icons-round">
+                                check_circle
+                            </span>
+
+                            <span>
+                                Already uploaded
+                            </span>
+
+                        </div>
+
+
+                        <div class="upload-action-group">
+
+                            <button type="button" class="preview-btn preview-btn-outline" data-preview-community
+                                data-for-input="upload_community_certificate">
+
+                                Preview
+
+                            </button>
+
+                            <label class="replace-btn" for="upload_community_certificate">
+
+                                <span class="material-icons-round">
+                                    refresh
+                                </span>
+
+                                Replace
+
+                            </label>
+
+                        </div>
+
+
+                        {% else %}
+
+                        <div class="file-upload-control">
+
+                            <label class="file-upload-btn" for="upload_community_certificate">
+
+                                Choose file
+
+                            </label>
+
+                            <div class="file-upload-filename placeholder" id="filename-upload_community_certificate">
+
+                                No file chosen
+
+                            </div>
+
+                        </div>
+
+                        <input type="file" id="upload_community_certificate" name="upload_community_certificate"
+                            accept=".pdf,application/pdf" required>
+
+                        {% endif %}
+
+
+                        <div class="upload-requirements pdf-requirement">
+
+                            <span class="material-icons-round">
+                                picture_as_pdf
+                            </span>
+
+                            <div>
+
+                                <strong>
+                                    Community Certificate Requirements
+                                </strong>
+
+                                <ul>
+
+                                    <li>
+                                        Only <strong>PDF</strong> file allowed
+                                    </li>
+
+                                    <li>
+                                        Maximum file size:
+                                        <strong>1 MB</strong>
+                                    </li>
+
+                                </ul>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-text text-muted mt-2">
+
+                            Scanned copy of Community Certificate.
+                            Certificate must be in English format.
+
+                        </div>
+
+                    </div>
+
+                    {% endif %}
+
+
+                    {% endif %}
+
+                </div>
+
+
+
+
+
+                <!-- ========================================================
+         EDUCATIONAL DOCUMENTS
+         12TH / DIPLOMA / BONAFIDE
+         COMBINED PDF - BELOW 5 MB
+         ======================================================== -->
+                {% if fb_section_visible_additional %}
+
+                <div class="mt-4" id="group-educational-documents" {% if db_documents.Additional_Documents %}
+                    data-uploaded-src="{{ db_documents.Additional_Documents.file_url }}" data-uploaded-type="pdf"
+                    data-uploaded-name="Other Documents" {% elif temp_files.Additional_Documents %}
+                    data-uploaded-src="{{ temp_files.Additional_Documents.url }}" data-uploaded-type="pdf"
+                    data-uploaded-name="Other Documents" {% endif %}>
+
+
+                    <!-- Other Documents Header -->
+                    <div class="educational-doc-header">
+
+                        <div class="educational-doc-icon">
+                            <span class="material-icons-round">
+                                folder_open
+                            </span>
+                        </div>
+
+                        <div>
+
+                            <h6 class="educational-doc-title">
+                                Other Documents
+                            </h6>
+
+                            <p class="educational-doc-subtitle">
+                                Upload all applicable certificates and documents as one combined PDF.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="upload_additional_documents" class="fw-bold mb-2">
+
+                            Other Documents *
+
+                        </label>
+
+
+                        {% if db_documents.Additional_Documents %}
+
+                        <div class="file-upload-control">
+
+                            <label class="file-upload-btn" for="upload_additional_documents">
+
+                                Choose file
+
+                            </label>
+
+                            <div class="file-upload-filename" id="filename-upload_additional_documents">
+
+                                {{ db_documents.Additional_Documents.filename }}
+
+                            </div>
+
+                        </div>
+
+                        <input type="file" id="upload_additional_documents" name="upload_additional_documents"
+                            accept=".pdf,application/pdf">
+
+
+                        <div class="upload-status-success">
+
+                            <span class="material-icons-round">
+                                check_circle
+                            </span>
+
+                            <span>
+                                Already uploaded
+                            </span>
+
+                        </div>
+
+
+                        <div class="upload-action-group">
+
+                            <button type="button" class="preview-btn preview-btn-outline" data-preview-additional
+                                data-for-input="upload_additional_documents">
+
+                                Preview
+
+                            </button>
+
+                            <label class="replace-btn" for="upload_additional_documents">
+
+                                <span class="material-icons-round">
+                                    refresh
+                                </span>
+
+                                Replace
+
+                            </label>
+
+                        </div>
+
+
+                        {% else %}
+
+                        <div class="file-upload-control">
+
+                            <label class="file-upload-btn" for="upload_additional_documents">
+
+                                Choose file
+
+                            </label>
+
+                            <div class="file-upload-filename placeholder" id="filename-upload_additional_documents">
+
+                                No file chosen
+
+                            </div>
+
+                        </div>
+
+                        <input type="file" id="upload_additional_documents" name="upload_additional_documents"
+                            accept=".pdf,application/pdf" required>
+
+                        {% endif %}
+
+
+                        <!-- Educational Document Requirements -->
+                        <div class="educational-requirements">
+
+                            <div class="educational-requirements-header">
+
+                                <span class="material-icons-round">
+                                    description
+                                </span>
+
+                                <strong>
+                                    Documents to be included
+                                </strong>
+
+                            </div>
+
+
+                            <div class="educational-document-list">
+
+                                <div class="educational-document-item">
+
+                                    <span class="document-number">
+                                        01
+                                    </span>
+
+                                    <div class="document-item-content">
+
+                                        <strong>
+                                            10th Certificate
+                                        </strong>
+
+                                        <span>
+                                            Secondary school / Class 10 certificate
+                                        </span>
+
+                                    </div>
+
+                                    <span class="document-required">
+                                        Required
+                                    </span>
+
+                                </div>
+
+
+                                <div class="educational-document-item">
+
+                                    <span class="document-number">
+                                        02
+                                    </span>
+
+                                    <div class="document-item-content">
+
+                                        <strong>
+                                            Intermediate / PUC / Diploma Certificate
+                                        </strong>
+
+                                        <span>
+                                            Intermediate / Class 12 certificate
+                                        </span>
+
+                                    </div>
+
+                                    <span class="document-required">
+                                        Required
+                                    </span>
+
+                                </div>
+
+
+                                <div class="educational-document-item">
+
+                                    <span class="document-number">
+                                        04
+                                    </span>
+
+                                    <div class="document-item-content">
+
+                                        <strong>
+                                            Aadhaar Card
+                                        </strong>
+
+                                        <span>
+                                            Clear copy of Aadhaar Card
+                                        </span>
+
+                                    </div>
+
+                                    <span class="document-required">
+                                        Required
+                                    </span>
+
+                                </div>
+
+
+                                <div class="educational-document-item">
+
+                                    <span class="document-number">
+                                        05
+                                    </span>
+
+                                    <div class="document-item-content">
+
+                                        <strong>
+                                            Caste Certificate
+                                        </strong>
+
+                                        <span>
+                                            Valid caste / community certificate
+                                        </span>
+
+                                    </div>
+
+                                    <span class="document-required">
+                                        Required
+                                    </span>
+
+                                </div>
+
+
+                                <div class="educational-document-item">
+
+                                    <span class="document-number">
+                                        06
+                                    </span>
+
+                                    <div class="document-item-content">
+
+                                        <strong>
+                                            3rd / 4th Year Bonafide Certificate
+                                        </strong>
+
+                                        <span>
+                                            Bonafide certificate from the educational institution
+                                        </span>
+
+                                        <span class="text-primary small fw-semibold">
+                                            Mandatory for Embedded & Soc Designer
+                                        </span>
+
+                                    </div>
+
+                                    <span class="document-program-based">
+                                        Program Based
+                                    </span>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="educational-upload-note">
+
+                                <span class="material-icons-round">
+                                    info
+                                </span>
+
+                                <div>
+                                    <strong class="d-block mb-1">Important</strong>
+                                    <span>Scan or combine all applicable documents into one PDF file. The uploaded PDF
+                                        must be below 2 MB.</span>
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="form-text text-primary mt-2 fw-semibold">
+
+                            PDF only • Single combined PDF • Maximum size: below 5 MB
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                {% endif %}
+
+                <!-- ========================================================
+         DECLARATION
+         ======================================================== -->
+                {% if fb_section_visible_declaration %}
+
+                <div class="mt-4 declaration-section" id="consent">
+
+                    <div class="form-check">
+
+                        <input class="form-check-input" type="checkbox" id="consent_given" name="consent_given"
+                            value="true" {% if form_data.consent_given %}checked{% endif %} required>
+
+                        <label class="form-check-label" for="consent_given">
+
+                            <strong>
+                                Declaration
+                            </strong>
+
+                            <br>
+
+                            I hereby declare that all the information provided
+                            above is true and correct to the best of my knowledge
+                            and belief. I understand that my application will be
+                            rejected if any information is found to be false or
+                            incorrect.
+
+                        </label>
+
+                    </div>
+
+                </div>
+
+                {% endif %}
+
+                <!-- Section 4 Footer -->
+                <div class="d-flex justify-content-end align-items-center mt-5 pt-3 border-top">
+                    <button type="submit" id="submitBtn"
+                        class="btn btn-primary btn-lg px-5 py-3 fw-bold rounded-pill shadow-lg d-flex align-items-center">
+                        Save &amp; Continue <span class="material-icons-round ms-2 align-middle">arrow_forward</span>
+                    </button>
+                </div>
+
+            </div>
+
+
+            <!-- ============================================================
+     DOCUMENT UPLOAD STYLES
+     ============================================================ -->
+            <style>
+                /* ============================================================
+   DOCUMENT UPLOAD GROUP
+   ============================================================ */
+
+                .document-upload-group {
+                    width: 100%;
+                }
+
+                .file-upload-wrapper {
+                    width: 100%;
+                }
+
+
+                /* ============================================================
+   FILE UPLOAD CONTROL
+   ============================================================ */
+
+                .file-upload-control {
+                    display: flex;
+                    align-items: stretch;
+                    width: 100%;
+                    min-height: 48px;
+                    overflow: hidden;
+
+                    border: 1px solid #dee2e6;
+                    border-radius: 10px;
+
+                    background: #ffffff;
+
+                    transition:
+                        border-color 0.2s ease,
+                        box-shadow 0.2s ease;
+                }
+
+                .file-upload-control:focus-within {
+                    border-color: #86b7fe;
+
+                    box-shadow:
+                        0 0 0 0.15rem rgba(13, 110, 253, 0.10);
+                }
+
+
+                /* ============================================================
+   CHOOSE FILE BUTTON
+   ============================================================ */
+
+                .file-upload-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    min-width: 120px;
+                    padding: 10px 16px;
+
+                    border-right: 1px solid #dee2e6;
+
+                    background: #f8f9fa;
+                    color: #212529;
+
+                    font-size: 0.88rem;
+                    font-weight: 600;
+
+                    cursor: pointer;
+                    user-select: none;
+
+                    transition:
+                        background 0.2s ease,
+                        color 0.2s ease;
+                }
+
+                .file-upload-btn:hover {
+                    background: #e9ecef;
+                }
+
+
+                /* ============================================================
+   FILE NAME
+   ============================================================ */
+
+                .file-upload-filename {
+                    display: flex;
+                    align-items: center;
+
+                    flex: 1;
+                    min-width: 0;
+
+                    padding: 10px 14px;
+
+                    color: #212529;
+                    font-size: 0.88rem;
+
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+
+                .file-upload-filename.placeholder {
+                    color: #6c757d;
+                }
+
+
+                /* Hide native file input */
+                input[type="file"] {
+                    display: none;
+                }
+
+
+                /* ============================================================
+   UPLOAD REQUIREMENTS
+   ============================================================ */
+
+                .upload-requirements {
+                    display: flex;
+                    align-items: flex-start;
+
+                    gap: 10px;
+
+                    margin-top: 10px;
+                    padding: 12px 14px;
+
+                    border: 1px solid #e5e7eb;
+                    border-radius: 10px;
+
+                    background: #f8fafc;
+
+                    color: #475467;
+
+                    font-size: 0.83rem;
+                    line-height: 1.55;
+                }
+
+                .upload-requirements>.material-icons-round {
+                    flex-shrink: 0;
+
+                    margin-top: 2px;
+
+                    font-size: 19px;
+
+                    color: #667085;
+                }
+
+                .upload-requirements strong {
+                    color: #344054;
+                    font-weight: 700;
+                }
+
+                .upload-requirements ul {
+                    margin: 5px 0 0;
+                    padding-left: 18px;
+                }
+
+                .upload-requirements li {
+                    margin-bottom: 3px;
+                }
+
+                .upload-requirements li:last-child {
+                    margin-bottom: 0;
+                }
+
+                .pdf-requirement {
+                    background: #fafafa;
+                }
+
+
+                /* ============================================================
+   SUCCESS STATUS
+   ============================================================ */
+
+                .upload-status-success {
+                    display: flex;
+                    align-items: center;
+
+                    gap: 6px;
+
+                    margin-top: 8px;
+
+                    color: #198754;
+
+                    font-size: 0.83rem;
+                    font-weight: 600;
+                }
+
+                .upload-status-success .material-icons-round {
+                    font-size: 18px;
+                }
+
+
+                /* ============================================================
+   ACTION BUTTONS
+   ============================================================ */
+
+                .upload-action-group {
+                    display: flex;
+                    align-items: center;
+
+                    gap: 8px;
+
+                    flex-wrap: wrap;
+
+                    margin-top: 10px;
+                }
+
+                .preview-btn,
+                .replace-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    min-height: 36px;
+
+                    padding: 7px 14px;
+
+                    border-radius: 7px;
+
+                    font-size: 0.83rem;
+                    font-weight: 600;
+
+                    cursor: pointer;
+                    text-decoration: none;
+
+                    transition:
+                        background 0.2s ease,
+                        border-color 0.2s ease,
+                        color 0.2s ease;
+                }
+
+                .preview-btn-outline {
+                    border: 1px solid #98a2b3;
+
+                    background: #ffffff;
+                    color: #344054;
+                }
+
+                .preview-btn-outline:hover {
+                    background: #f8fafc;
+                    border-color: #667085;
+                }
+
+                .replace-btn {
+                    border: 1px solid #0d6efd;
+
+                    background: #ffffff;
+                    color: #0d6efd;
+                }
+
+                .replace-btn:hover {
+                    background: #0d6efd;
+                    color: #ffffff;
+                }
+
+                .preview-btn .material-icons-round,
+                .replace-btn .material-icons-round {
+                    margin-right: 5px;
+                    font-size: 16px;
+                }
+
+
+                /* ============================================================
+   CONVERTER HELP CARD
+   ============================================================ */
+
+                .converter-help-card {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+
+                    gap: 20px;
+
+                    margin-bottom: 24px;
+                    padding: 16px 18px;
+
+                    border: 1px solid #e5e7eb;
+                    border-radius: 12px;
+
+                    background: #f8fafc;
+                }
+
+                .converter-help-content {
+                    display: flex;
+                    align-items: center;
+
+                    gap: 12px;
+
+                    min-width: 0;
+                }
+
+                .converter-help-icon {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    width: 42px;
+                    height: 42px;
+
+                    flex: 0 0 42px;
+
+                    border-radius: 10px;
+
+                    background: #e9f2ff;
+                    color: #0d6efd;
+                }
+
+                .converter-help-icon .material-icons-round {
+                    font-size: 22px;
+                }
+
+                .converter-help-text {
+                    display: flex;
+                    flex-direction: column;
+
+                    gap: 3px;
+                }
+
+                .converter-help-text strong {
+                    color: #1d2939;
+                    font-size: 0.9rem;
+                }
+
+                .converter-help-text span {
+                    color: #667085;
+                    font-size: 0.82rem;
+                    line-height: 1.45;
+                }
+
+                .converter-help-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    gap: 6px;
+
+                    flex-shrink: 0;
+
+                    padding: 9px 14px;
+
+                    border-radius: 8px;
+
+                    background: #0d6efd;
+                    color: #ffffff;
+
+                    font-size: 0.82rem;
+                    font-weight: 600;
+
+                    text-decoration: none;
+
+                    transition:
+                        background 0.2s ease,
+                        transform 0.2s ease;
+                }
+
+                .converter-help-btn:hover {
+                    background: #0b5ed7;
+                    color: #ffffff;
+                }
+
+                .converter-external {
+                    font-size: 16px;
+                }
+
+
+                /* ============================================================
+   EDUCATIONAL DOCUMENTS
+   ============================================================ */
+
+                .educational-doc-header {
+                    display: flex;
+                    align-items: center;
+
+                    gap: 12px;
+
+                    margin-bottom: 16px;
+                    padding: 14px 16px;
+
+                    border: 1px solid #e5e7eb;
+                    border-radius: 12px;
+
+                    background: #f8fafc;
+                }
+
+                .educational-doc-icon {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    width: 42px;
+                    height: 42px;
+
+                    flex: 0 0 42px;
+
+                    border-radius: 10px;
+
+                    background: #e9f2ff;
+                    color: #0d6efd;
+                }
+
+                .educational-doc-icon .material-icons-round {
+                    font-size: 22px;
+                }
+
+                .educational-doc-title {
+                    margin: 0;
+
+                    color: #1d2939;
+
+                    font-size: 0.95rem;
+                    font-weight: 700;
+                }
+
+                .educational-doc-subtitle {
+                    margin: 3px 0 0;
+
+                    color: #667085;
+
+                    font-size: 0.8rem;
+                    line-height: 1.45;
+                }
+
+
+                /* ============================================================
+   EDUCATIONAL REQUIREMENTS
+   ============================================================ */
+
+                .educational-requirements {
+                    margin-top: 12px;
+
+                    padding: 14px;
+
+                    border: 1px solid #e5e7eb;
+                    border-radius: 10px;
+
+                    background: #ffffff;
+                }
+
+                .educational-requirements-header {
+                    display: flex;
+                    align-items: center;
+
+                    gap: 7px;
+
+                    margin-bottom: 10px;
+
+                    color: #344054;
+
+                    font-size: 0.84rem;
+                }
+
+                .educational-requirements-header .material-icons-round {
+                    font-size: 18px;
+                    color: #0d6efd;
+                }
+
+
+                /* ============================================================
+   EDUCATIONAL DOCUMENT LIST
+   ============================================================ */
+
+                .educational-document-list {
+                    display: flex;
+                    flex-direction: column;
+
+                    gap: 7px;
+                }
+
+                .educational-document-item {
+                    display: flex;
+                    align-items: center;
+
+                    gap: 10px;
+
+                    padding: 9px 10px;
+
+                    border: 1px solid #edf0f3;
+                    border-radius: 8px;
+
+                    background: #fafbfc;
+                }
+
+                .document-number {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+
+                    width: 28px;
+                    height: 28px;
+
+                    flex: 0 0 28px;
+
+                    border-radius: 7px;
+
+                    background: #eef4ff;
+                    color: #0d6efd;
+
+                    font-size: 0.72rem;
+                    font-weight: 700;
+                }
+
+                .document-item-content {
+                    display: flex;
+                    flex-direction: column;
+
+                    flex: 1;
+                    min-width: 0;
+
+                    gap: 2px;
+                }
+
+                .document-item-content strong {
+                    color: #344054;
+                    font-size: 0.82rem;
+                }
+
+                .document-item-content span {
+                    color: #667085;
+                    font-size: 0.75rem;
+                }
+
+                .document-required,
+                .document-optional,
+                .document-program-based {
+                    flex-shrink: 0;
+
+                    padding: 3px 8px;
+
+                    border-radius: 20px;
+
+                    font-size: 0.68rem;
+                    font-weight: 700;
+                }
+
+                .document-required {
+                    background: #ecfdf3;
+                    color: #027a48;
+                }
+
+                .document-optional {
+                    background: #f2f4f7;
+                    color: #667085;
+                }
+
+                .document-program-based {
+                    background: #eff8ff;
+                    color: #175cd3;
+                }
+
+
+                /* ============================================================
+   EDUCATIONAL UPLOAD NOTE
+   ============================================================ */
+
+                .educational-upload-note {
+                    display: flex;
+                    align-items: flex-start;
+
+                    gap: 8px;
+
+                    margin-top: 12px;
+                    padding: 10px 12px;
+
+                    border: 1px solid #dbeafe;
+                    border-radius: 8px;
+
+                    background: #eff6ff;
+
+                    color: #1e40af;
+
+                    font-size: 0.78rem;
+                    line-height: 1.5;
+                }
+
+                .educational-upload-note .material-icons-round {
+                    flex-shrink: 0;
+
+                    margin-top: 1px;
+
+                    font-size: 17px;
+                }
+
+                .educational-upload-note strong {
+                    font-weight: 700;
+                }
+
+
+                /* ============================================================
+   MOBILE RESPONSIVE
+   ============================================================ */
+
+                @media (max-width: 768px) {
+
+                    .converter-help-card {
+                        align-items: flex-start;
+                        flex-direction: column;
+                        gap: 14px;
+                    }
+
+                    .converter-help-btn {
+                        width: 100%;
+                    }
+
+                    .upload-requirements {
+                        font-size: 0.8rem;
+                        padding: 10px 12px;
+                    }
+
+                    .file-upload-btn {
+                        min-width: 105px;
+                        padding: 9px 12px;
+                        font-size: 0.82rem;
+                    }
+
+                    .file-upload-filename {
+                        padding: 9px 11px;
+                        font-size: 0.82rem;
+                    }
+
+                    .educational-document-item {
+                        align-items: flex-start;
+                    }
+
+                    .document-required,
+                    .document-optional {
+                        margin-left: auto;
+                    }
+
+                }
+
+
+                /* ============================================================
+   SMALL MOBILE
+   ============================================================ */
+
+                @media (max-width: 480px) {
+
+                    .file-upload-control {
+                        flex-direction: column;
+                    }
+
+                    .file-upload-btn {
+                        width: 100%;
+
+                        border-right: 0;
+                        border-bottom: 1px solid #dee2e6;
+                    }
+
+                    .file-upload-filename {
+                        justify-content: center;
+
+                        width: 100%;
+                        min-height: 42px;
+
+                        text-align: center;
+                    }
+
+                    .upload-action-group {
+                        width: 100%;
+                    }
+
+                    .preview-btn,
+                    .replace-btn {
+                        flex: 1 1 100%;
+                        width: 100%;
+                    }
+
+                    .converter-help-content {
+                        align-items: flex-start;
+                    }
+
+                    .converter-help-text span {
+                        font-size: 0.78rem;
+                    }
+
+                    .educational-doc-header {
+                        align-items: flex-start;
+                    }
+
+                    .educational-document-item {
+                        flex-wrap: wrap;
+                    }
+
+                    .document-item-content {
+                        min-width: calc(100% - 48px);
+                    }
+
+                    .document-required,
+                    .document-optional {
+                        margin-left: 38px;
+                    }
+
+                }
+            </style>
+
+        </form>
+    </div>
+</div>
+
+<!-- Preview Modal: shared for image + PDF previews -->
+<div class="preview-modal" id="preview-modal" role="dialog" aria-modal="true" aria-labelledby="preview-modal-title"
+    aria-hidden="true">
+    <div class="preview-modal-dialog" role="document">
+        <div class="preview-modal-header">
+            <h5 class="preview-modal-title" id="preview-modal-title">Preview</h5>
+            <button type="button" class="preview-modal-close" id="preview-modal-close" aria-label="Close preview">
+                <span class="material-icons-round">close</span>
+            </button>
+        </div>
+        <div class="preview-modal-body" id="preview-modal-body">
+            <div class="preview-modal-message">
+                <span class="material-icons-round">hide_image</span>
+                <p>Preparing preview…</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+
+    document.addEventListener("DOMContentLoaded", function () {
+
+        const hallTicketInput = document.getElementById("hall_ticket_number");
+        const registrationInput = document.getElementById("registration_number");
+
+        if (!hallTicketInput || !registrationInput) {
+            return;
+        }
+
+        // Registration Number cannot be manually edited
+        registrationInput.readOnly = true;
+
+        // Copy Hall Ticket Number → Registration Number
+        function syncRegistrationNumber() {
+            registrationInput.value = hallTicketInput.value;
+        }
+
+        // While typing
+        hallTicketInput.addEventListener("input", syncRegistrationNumber);
+
+        // When page loads / validation reloads
+        syncRegistrationNumber();
+    });
+    let stateSelect, districtSelect;
+    const allQualifications = {{ qualifications_json| safe }};
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Clear storage if not editing
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('edit') !== '1') {
+            localStorage.clear();
+            sessionStorage.clear();
+        }
+
+        // Initialize Tom Select
+        stateSelect = new TomSelect('#state', {
+            create: false,
+            sortField: { field: "text", direction: "asc" }
+        });
+        districtSelect = new TomSelect('#district', {
+            create: false,
+            sortField: { field: "text", direction: "asc" }
+        });
+        let applyQualSelect = new TomSelect('#applying_qualification', { create: false, sortField: false });
+        let qualSelect = new TomSelect('#qualification', { create: false, sortField: [{ field: '$order' }] });
+        let tpSelect = new TomSelect('#training_partner', { create: false, sortField: { field: "text", direction: "asc" } });
+
+        function updateQualifications(applyingQualValue, selectedQualId = null) {
+            if (!qualSelect) return;
+
+            const currentVal = selectedQualId || qualSelect.getValue();
+
+            qualSelect.clear();
+            qualSelect.clearOptions();
+
+            let allowedCategories = [];
+            if (applyingQualValue === '12th or equivalent') {
+                allowedCategories = ['12th / Equivalent'];
+            } else if (applyingQualValue === '2yrs of 3 yr dip in ECE/EE/CS/IT and allied branches after 10th') {
+                allowedCategories = ['Diploma'];
+            } else if (applyingQualValue === 'Previous relevant Qualification of NSQF Level 3' ||
+                applyingQualValue === 'Previous relevant Qualification of NSQF Level 5') {
+                allowedCategories = ['Diploma', 'Other'];
+            } else if (applyingQualValue === 'Pursing 3rd yr of UG in CS/IT/ECE/EE/allied branches' ||
+                applyingQualValue === 'Pursing 3rd yr of UG in CS/IT /ECE/EE/allied branches') {
+                allowedCategories = ['B.Tech / Engineering', 'B.Sc', "Other Bachelor's Degrees"];
+            } else if (applyingQualValue === 'Completed 3 year of UG in CS/IT/ECE/EE/allied branches') {
+                allowedCategories = ['B.Tech / Engineering', 'B.Sc', "Other Bachelor's Degrees", 'Postgraduate'];
+            } else {
+                allowedCategories = ['12th / Equivalent', 'Diploma', 'B.Tech / Engineering', 'B.Sc', "Other Bachelor's Degrees", 'Postgraduate', 'Other'];
+            }
+
+            const categories = [
+                '12th / Equivalent',
+                'Diploma',
+                'B.Tech / Engineering',
+                'B.Sc',
+                "Other Bachelor's Degrees",
+                'Postgraduate',
+                'Other'
+            ];
+
+            categories.forEach(cat => {
+                if (allowedCategories.includes(cat)) {
+                    qualSelect.addOptionGroup(cat, { label: cat });
+                }
+            });
+
+            allQualifications.forEach((q, idx) => {
+                if (allowedCategories.includes(q.category)) {
+                    qualSelect.addOption({
+                        value: q.id.toString(),
+                        text: q.name,
+                        optgroup: q.category,
+                        $order: idx + 1
+                    });
+                }
+            });
+
+            qualSelect.refreshOptions(false);
+
+            if (currentVal) {
+                qualSelect.setValue(currentVal);
+            }
+        }
+
+        applyQualSelect.on('change', function (value) {
+            updateQualifications(value);
+        });
+
+        // Initialize based on saved value
+        const initialApplyingQual = applyQualSelect.getValue();
+        const initialQual = "{{ form_data.qualification|default:'' }}";
+        updateQualifications(initialApplyingQual, initialQual);
+
+        // Qualification Other Toggle
+        qualSelect.on('change', function (value) {
+            const container = document.getElementById('custom_stream_container');
+            const input = document.getElementById('custom_stream');
+            if (this.options[value] && this.options[value].text.toLowerCase() === 'other') {
+                container.style.display = 'block';
+                input.required = true;
+            } else {
+                container.style.display = 'none';
+                input.required = false;
+                input.value = '';
+                input.dispatchEvent(new Event('change'));
+            }
+        });
+
+        // Year of passing generator
+        const yopSelect = document.getElementById('year_of_passing');
+        if (yopSelect) {
+            const currentYear = new Date().getFullYear();
+            const startYear = currentYear - 30;
+            const endYear = currentYear + 5;
+            const savedYop = "{{ form_data.year_of_passing|default:'' }}";
+
+            for (let y = endYear; y >= startYear; y--) {
+                let opt = document.createElement('option');
+                opt.value = y;
+                opt.innerHTML = y;
+                if (savedYop == y) opt.selected = true;
+                yopSelect.appendChild(opt);
+            }
+        }
+
+        // Completion status toggle
+        const completionStatus = document.getElementById('completion_status');
+        if (completionStatus) {
+            completionStatus.addEventListener('change', function () {
+                const pctAsterisk = document.getElementById('percentage_asterisk');
+                const pctInput = document.getElementById('percentage');
+                if (this.value === 'Completed') {
+                    pctAsterisk.style.display = 'inline';
+                    pctInput.required = true;
+                } else {
+                    pctAsterisk.style.display = 'none';
+                    pctInput.required = false;
+                }
+            });
+            // Initial check
+            completionStatus.dispatchEvent(new Event('change'));
+        }
+
+        // Batch code fetcher
+        tpSelect.on('change', function (value) {
+            fetch(`/api/get-batch-code/?training_partner_id=${value}`)
+                .then(res => res.json())
+                .then(data => {
+                    const batchCodeInput = document.getElementById('batch_code');
+                    const batchFeedback = document.getElementById('batch_code_feedback');
+                    if (data.success) {
+                        batchCodeInput.value = data.batch_code;
+                        batchCodeInput.classList.remove('is-invalid');
+                        batchFeedback.style.display = 'none';
+                        batchCodeInput.dispatchEvent(new Event('change'));
+                    } else {
+                        batchCodeInput.value = '';
+                        batchCodeInput.classList.add('is-invalid');
+                        batchFeedback.style.display = 'block';
+                    }
+                });
+        });
+
+        // Event listeners
+        stateSelect.on('change', function (value) {
+            loadDistricts(value);
+        });
+
+        // Initial load for session data
+        const initialCountry = document.getElementById('country').value;
+        if (initialCountry) {
+            loadStates(initialCountry);
+        }
+
+        // ==============================================================
+        // PROGRESSIVE SECTION UNLOCKING MANAGER
+        // ==============================================================
+        const STEP_ORDER = ['personal-details', 'contact-details', 'education-details', 'document-uploads'];
+        const completedSectionsSet = new Set({{ completed_sections_json| safe }});
+
+    function isSectionUnlocked(secId) {
+        if (secId === 'personal-details') return true;
+        const idx = STEP_ORDER.indexOf(secId);
+        if (idx === -1) return false;
+        // A section is unlocked if it is already completed, or the immediately previous section is completed
+        const prevSecId = STEP_ORDER[idx - 1];
+        return completedSectionsSet.has(secId) || completedSectionsSet.has(prevSecId);
+    }
+
+    function updateSectionLockStates() {
+        STEP_ORDER.forEach(secId => {
+            const sec = document.getElementById(secId);
+            const navLink = document.getElementById(`nav-link-${secId}`);
+            const unlocked = isSectionUnlocked(secId);
+
+            if (sec) {
+                if (unlocked) {
+                    sec.classList.remove('section-locked');
+                    sec.querySelectorAll('input, select, textarea, button').forEach(el => {
+                        el.disabled = false;
+                    });
+                } else {
+                    sec.classList.add('section-locked');
+                    sec.querySelectorAll('input, select, textarea, button').forEach(el => {
+                        el.disabled = true;
+                    });
+                }
+            }
+
+            if (navLink) {
+                if (unlocked) {
+                    navLink.classList.remove('disabled');
+                } else {
+                    navLink.classList.add('disabled');
+                }
+            }
+        });
+
+        // Trigger window resize so TomSelect recalculates container width
+        window.dispatchEvent(new Event('resize'));
+    }
+
+    function scrollToSection(secId) {
+        const sec = document.getElementById(secId);
+        if (sec) {
+            const offset = 80;
+            window.scrollTo({
+                top: sec.getBoundingClientRect().top + window.scrollY - offset,
+                behavior: 'smooth'
+            });
+        }
+    }
+
+    // Initialize Section Lock States
+    updateSectionLockStates();
+
+    // Sidebar Navigation Links click handler
+    const navLinks = document.querySelectorAll('#form-nav .nav-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            const secId = this.getAttribute('data-section') || this.getAttribute('href')?.replace('#', '');
+            if (secId && isSectionUnlocked(secId)) {
+                scrollToSection(secId);
+            }
+        });
+    });
+
+    // Scrollspy to highlight active section in sidebar as user scrolls
+    const sections = document.querySelectorAll('.form-section');
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const secId = entry.target.id;
+                if (isSectionUnlocked(secId)) {
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    const activeLink = document.getElementById(`nav-link-${secId}`);
+                    if (activeLink) activeLink.classList.add('active');
+                }
+            }
+        });
+    }, { rootMargin: '-20% 0px -60% 0px' });
+    sections.forEach(s => observer.observe(s));
+
+    // "Save & Continue" button handlers (Personal Details, Contact Details, Education Details)
+    document.querySelectorAll('.step-btn-next').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const section = this.dataset.section;
+            if (!section) return;
+
+            const originalBtnHtml = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Saving...';
+
+            // Clear previous errors
+            document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            document.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+            const oldBanner = document.getElementById('validation-banner');
+            if (oldBanner) oldBanner.remove();
+
+            const formData = new FormData(form);
+            formData.set('section', section);
+            if (formData.get('institution') === 'Other') {
+                const otherInput = document.getElementById('other_institution');
+                const customInst = otherInput ? otherInput.value.trim() : '';
+                if (customInst) {
+                    formData.set('institution', customInst);
+                }
+            }
+            if (formData.has('annual_income')) {
+                formData.set('annual_income', formData.get('annual_income').replace(/[^0-9]/g, ''));
+            }
+
+            fetch('{% url "save_section" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    btn.disabled = false;
+                    btn.innerHTML = originalBtnHtml;
+
+                    if (data.success) {
+                        // Mark section completed
+                        completedSectionsSet.add(section);
+                        if (data.completed_sections) {
+                            data.completed_sections.forEach(s => completedSectionsSet.add(s));
+                        }
+                        // Unlock next section progressively
+                        updateSectionLockStates();
+                        // Smoothly scroll down to the next section
+                        if (data.next_section) {
+                            scrollToSection(data.next_section);
+                        }
+                    } else if (data.errors) {
+                        let firstInvalidField = null;
+                        for (const [field, messages] of Object.entries(data.errors)) {
+                            if (field === '__all__') continue;
+                            const el = document.getElementById(field) || document.querySelector(`[name="${field}"]`);
+                            const plain = Array.isArray(messages) ? messages[0] : String(messages);
+                            showError(field, plain);
+                            if (!firstInvalidField && el) {
+                                firstInvalidField = el;
+                            }
+                        }
+
+                        if (firstInvalidField) {
+                            const offset = 100;
+                            window.scrollTo({
+                                top: firstInvalidField.getBoundingClientRect().top + window.scrollY - offset,
+                                behavior: 'smooth'
+                            });
+                            firstInvalidField.focus();
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error("Error saving section:", err);
+                    btn.disabled = false;
+                    btn.innerHTML = originalBtnHtml;
+                    alert("Unable to save this section due to a server error. Please try again.");
+                });
+        });
+    });
+
+    // Validation display helpers
+    function showError(fieldId, message) {
+        if (fieldId === 'institution') {
+            const otherInput = document.getElementById('other_institution');
+            const otherWrap = document.getElementById('other_institution_wrapper');
+            if (otherWrap && otherWrap.style.display !== 'none' && otherInput) {
+                otherInput.classList.add('is-invalid');
+            }
+            const feedback = document.getElementById('institution-feedback');
+            if (feedback) {
+                feedback.innerHTML = '❌ ' + message;
+                feedback.style.display = 'block';
+            }
+        }
+        const el = document.getElementById(fieldId);
+        if (!el) return;
+        el.classList.add('is-invalid');
+        el.classList.remove('is-valid');
+        let feedback = el.parentNode.querySelector('.invalid-feedback');
+        if (!feedback) {
+            feedback = document.createElement('div');
+            feedback.className = 'invalid-feedback fw-bold';
+            el.parentNode.appendChild(feedback);
+        }
+        feedback.innerHTML = '❌ ' + message;
+    }
+
+    function clearError(fieldId) {
+        if (fieldId === 'institution') {
+            const otherInput = document.getElementById('other_institution');
+            if (otherInput) otherInput.classList.remove('is-invalid');
+            const feedback = document.getElementById('institution-feedback');
+            if (feedback) {
+                feedback.innerHTML = '';
+                feedback.style.display = 'none';
+            }
+        }
+        const el = document.getElementById(fieldId);
+        if (!el) return;
+        el.classList.remove('is-invalid');
+        el.classList.add('is-valid');
+        const feedback = el.parentNode.querySelector('.invalid-feedback');
+        if (feedback) feedback.remove();
+    }
+
+    // Real-time Field Validation
+    const validateField = (id, regex, errorMsg, minLength = null) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const handler = () => {
+            let val = el.value;
+            if (id === 'annual_income') {
+                val = val.replace(/[^0-9]/g, '');
+            }
+            if (!val) { clearError(id); el.classList.remove('is-valid'); return; }
+            if (minLength && val.length < minLength) {
+                showError(id, errorMsg);
+            } else if (regex && !regex.test(val)) {
+                showError(id, errorMsg);
+            } else {
+                clearError(id);
+            }
+        };
+        el.addEventListener('blur', handler);
+        el.addEventListener('input', () => { if (el.classList.contains('is-invalid')) handler(); });
+    };
+
+    const nameErrorMsg = 'Only alphabets and spaces are allowed. Numbers and special characters are not permitted.';
+    validateField('full_name', /^[A-Za-z\s]{2,100}$/, nameErrorMsg);
+    validateField('father_name', /^[A-Za-z\s]{2,100}$/, nameErrorMsg);
+    validateField('mother_name', /^[A-Za-z\s]{2,100}$/, nameErrorMsg);
+
+
+    validateField('mobile_number', /^[1-9]\d{9}$/, 'Number must be 10 digits and cannot start with 0.', 10);
+    validateField('alternative_mobile', /^[1-9]\d{9}$/, 'Number must be 10 digits and cannot start with 0.', 10);
+    validateField('pincode', /^\d{6}$/, 'Enter a valid 6-digit pincode.', 6);
+    validateField('aadhaar_number', /^[1-9]\d{11}$/, 'Aadhaar number must be 12 digits and cannot start with 0.', 12);
+    validateField('annual_income', /^\d+$/, 'Please enter a valid annual income.');
+    validateField('abc_id', /^\d{12}$/, 'Enter a valid 12-digit ABC ID (Apaar ID).', 12);
+
+    validateField('percentage', /^([0-9]{1,2}(\.[0-9]{1,2})?|100(\.00?)?)$/, 'Enter a valid percentage between 0 and 100.');
+    validateField('custom_stream', /^[A-Za-z0-9\s\-\/&\(\)]{3,100}$/, 'Must be between 3 and 100 characters. Contains invalid characters.', 3);
+    validateField('email', /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Enter a valid email address.');
+    validateField('nielit_registration_number', /^[A-Za-z0-9 -]*$/, 'Only letters, numbers, spaces, and hyphens (-) are allowed.');
+
+    // Educational Institution "Other" option toggle
+    const instSelect = document.getElementById('institution');
+    const instSelectWrapper = document.getElementById('institution_select_wrapper');
+    const otherInstWrapper = document.getElementById('other_institution_wrapper');
+    const otherInstInput = document.getElementById('other_institution');
+    const btnBackToList = document.getElementById('btn_back_to_institution_list');
+
+    function activateOtherInstitution() {
+        if (instSelectWrapper && otherInstWrapper) {
+            instSelectWrapper.style.display = 'none';
+            otherInstWrapper.style.display = 'block';
+            if (otherInstInput) {
+                otherInstInput.focus();
+            }
+        }
+    }
+
+    function activateInstitutionSelect() {
+        if (instSelectWrapper && otherInstWrapper) {
+            otherInstWrapper.style.display = 'none';
+            instSelectWrapper.style.display = 'block';
+            if (instSelect) {
+                instSelect.value = '';
+                instSelect.focus();
+            }
+            if (otherInstInput) {
+                otherInstInput.value = '';
+            }
+            clearError('institution');
+        }
+    }
+
+    if (instSelect) {
+        instSelect.addEventListener('change', function () {
+            clearError('institution');
+            if (this.value === 'Other') {
+                activateOtherInstitution();
+            }
+        });
+        if (instSelect.value === 'Other') {
+            activateOtherInstitution();
+        }
+    }
+
+    if (btnBackToList) {
+        btnBackToList.addEventListener('click', function () {
+            activateInstitutionSelect();
+        });
+    }
+
+    if (otherInstInput) {
+        otherInstInput.addEventListener('input', function () {
+            clearError('institution');
+        });
+    }
+
+
+    // Auto-save logic
+    const autoSave = (id) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener('change', function () {
+            if (el.classList.contains('is-invalid')) return; // Don't save invalid fields
+            const formData = new FormData();
+            formData.append('field', el.name);
+            let valueToSend = el.value;
+            if (id === 'annual_income') {
+                valueToSend = valueToSend.replace(/[^0-9]/g, '');
+            }
+            if (el.type === 'checkbox') {
+                formData.append('value', el.checked ? 'true' : '');
+            } else {
+                formData.append('value', valueToSend);
+            }
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+            fetch('{% url "auto_save_field" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            }).then(res => res.json()).then(data => {
+                if (data.success) {
+                    let feedback = el.parentNode.querySelector('.valid-feedback');
+                    if (!feedback) {
+                        feedback = document.createElement('div');
+                        feedback.className = 'valid-feedback fw-bold text-success';
+                        el.parentNode.appendChild(feedback);
+                    }
+                    feedback.innerHTML = data.message;
+                    el.classList.add('is-valid');
+                    setTimeout(() => {
+                        feedback.innerHTML = '';
+                        el.classList.remove('is-valid');
+                    }, 3000);
+                }
+            });
+        });
+    };
+
+    // Attach auto-save to all inputs in the form (excluding files)
+    document.querySelectorAll('form input:not([type="file"]), form select, form textarea').forEach(el => {
+        if (el.id && el.name) autoSave(el.id);
+    });
+
+    // Validation logic for "Preview Application" via AJAX
+    const form = document.getElementById('registrationForm');
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.addEventListener('click', function () {
+        console.log('PREVIEW BUTTON CLICKED');
+    });
+    form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        console.log('Submitting registration for preview...');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Processing &amp; Saving...';
+
+        // Clear previous errors
+        document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+        document.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+        const oldBanner = document.getElementById('validation-banner');
+        if (oldBanner) oldBanner.remove();
+
+        // Validate percentage again when clicking Save & Continue
+        const formPctInput = document.getElementById('percentage');
+        if (formPctInput) {
+            const pctVal = formPctInput.value;
+            if (pctVal !== '') {
+                const pctRegex = /^([0-9]{1,2}(\.[0-9]{1,2})?|100(\.00?)?)$/;
+                if (!pctRegex.test(pctVal)) {
+                    showError('percentage', 'Enter a valid percentage between 0 and 100.');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Save &amp; Continue <span class="material-icons-round ms-2">arrow_forward</span>';
+                    formPctInput.focus();
+                    return;
+                }
+            }
+        }
+
+        // Validate institution name on Save & Continue - handled by comprehensive validation
+        // Validate distinguishing mark on Save & Continue - handled by comprehensive validation
+
+        const formData = new FormData(form);
+        if (formData.get('institution') === 'Other') {
+            const otherInput = document.getElementById('other_institution');
+            const customInst = otherInput ? otherInput.value.trim() : '';
+            if (customInst) {
+                formData.set('institution', customInst);
+            }
+        }
+        if (formData.has('annual_income')) {
+            formData.set('annual_income', formData.get('annual_income').replace(/[^0-9]/g, ''));
+        }
+
+        fetch('{% url "submit_application" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+            .then(res => {
+                // Try to parse as JSON, fallback to text
+                const contentType = res.headers.get('content-type');
+                if (contentType && contentType.indexOf('application/json') !== -1) {
+                    return res.json();
+                }
+                return res.text().then(text => { throw new Error(text || 'Unknown error'); });
+            })
+            .then(data => {
+                console.log('Preview response:', data);
+                if (data.success) {
+                    // Redirect to preview page
+                    if (data.redirect_url) {
+                        console.log('Redirecting to:', data.redirect_url);
+                        window.location.href = data.redirect_url;
+                    } else {
+                        // Fallback: navigate to preview page
+                        window.location.href = '{% url "preview_application" %}';
+                    }
+                } else {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Save &amp; Continue <span class="material-icons-round ms-2">arrow_forward</span>';
+
+                    let firstInvalidField = null;
+                    let errorCount = Object.keys(data.errors).length;
+
+                    // Show banner
+                    const banner = document.createElement('div');
+                    banner.id = 'validation-banner';
+                    banner.className = 'alert alert-danger shadow-sm border-0 mt-3';
+
+                    let bannerHTML = `<strong>⚠ Upload/Processing Issue</strong><div class="mt-2">`;
+
+                    // If errors contain field-specific structured objects, render detailed sections
+                    for (const [field, messages] of Object.entries(data.errors)) {
+                        if (field === '__all__') {
+                            bannerHTML += `<div class="mb-2">${messages[0]}</div>`;
+                            continue;
+                        }
+
+                        const el = document.getElementById(field) || document.querySelector(`[name="${field}"]`);
+
+                        // Messages may be an array of strings or an array of structured objects
+                        const firstMsg = Array.isArray(messages) ? messages[0] : messages;
+
+                        if (typeof firstMsg === 'object' && firstMsg !== null) {
+                            // Structured file error
+                            const fileName = firstMsg.file_name || '';
+                            const category = firstMsg.category || 'processing_error';
+                            bannerHTML += `<div class="mb-3 p-2 rounded border bg-white text-dark">`;
+                            bannerHTML += `<div class="fw-bold">${fileName || field}</div>`;
+                            bannerHTML += `<div class="text-danger small fw-bold mt-1">❌ ${(category === 'file_type') ? 'Invalid file type' : (category === 'file_size') ? 'File size issue' : (category === 'processing_error') ? 'Processing failed' : 'File error'}</div>`;
+                            if (firstMsg.message) bannerHTML += `<div class="small mt-1">${firstMsg.message}</div>`;
+                            if (firstMsg.current_size_kb) bannerHTML += `<div class="small">Current size: ${firstMsg.current_size_kb} KB</div>`;
+                            if (firstMsg.required_kb) bannerHTML += `<div class="small">Required size (approx): ${Math.round(firstMsg.required_kb / 1024)} MB</div>`;
+                            if (firstMsg.allowed) bannerHTML += `<div class="small">Allowed formats: ${firstMsg.allowed.join(', ')}</div>`;
+                            if (firstMsg.hint) bannerHTML += `<div class="small text-muted">Hint: ${firstMsg.hint}</div>`;
+                            bannerHTML += `</div>`;
+
+                            // Mark related input as invalid if present
+                            if (el) {
+                                showError(el.id || field, firstMsg.message || 'File upload error');
+                                if (!firstInvalidField) firstInvalidField = el;
+                            }
+                        } else {
+                            // Fallback: plain string message
+                            const plain = Array.isArray(messages) ? messages[0] : String(messages);
+                            bannerHTML += `<div class="mb-2">${field.replace(/_/g, ' ')}: ${plain}</div>`;
+                            if (el) {
+                                showError(el.id || field, plain);
+                                if (!firstInvalidField) firstInvalidField = el;
+                            }
+                        }
+                    }
+
+                    bannerHTML += '</div>';
+                    banner.innerHTML = bannerHTML;
+                    form.insertBefore(banner, form.firstChild);
+
+                    // Scroll to first invalid field
+                    if (firstInvalidField) {
+                        const offset = 100;
+                        window.scrollTo({ top: firstInvalidField.getBoundingClientRect().top + window.scrollY - offset, behavior: 'smooth' });
+                        firstInvalidField.focus();
+                    } else {
+                        window.scrollTo({ top: banner.getBoundingClientRect().top + window.scrollY - 100, behavior: 'smooth' });
+                    }
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Save &amp; Continue <span class="material-icons-round ms-2">arrow_forward</span>';
+                alert("We were unable to complete this action due to a server error. Please try again, and contact support if the problem continues.");
+            });
+    });
+
+    function loadStates(countryId) {
+        stateSelect.clear();
+        stateSelect.clearOptions();
+        districtSelect.clear();
+        districtSelect.clearOptions();
+
+        if (countryId) {
+            fetch(`/api/states/?country_id=${countryId}`)
+                .then(res => res.json())
+                .then(data => {
+                    data.forEach(state => {
+                        stateSelect.addOption({ value: state.id, text: state.name });
+                    });
+                    const initialState = "{{ form_data.state|default:'' }}";
+                    if (initialState) {
+                        stateSelect.setValue(initialState);
+                    }
+                });
+        }
+    }
+
+    function loadDistricts(stateId, targetDistrictId = null) {
+        districtSelect.clear();
+        districtSelect.clearOptions();
+
+        if (stateId) {
+            fetch(`/api/districts/?state_id=${stateId}`)
+                .then(res => res.json())
+                .then(data => {
+                    data.forEach(district => {
+                        districtSelect.addOption({ value: district.id, text: district.name });
+                    });
+                    const initialDistrict = targetDistrictId || "{{ form_data.district|default:'' }}";
+                    if (initialDistrict) {
+                        districtSelect.setValue(initialDistrict);
+                    }
+                });
+        }
+    }
+
+    // Digit-only normalization - REMOVED (handled by comprehensive validation above)
+
+    // Real-time name input restrictions - REMOVED (handled by comprehensive validation above)
+
+    // ==================== COMPREHENSIVE INPUT VALIDATION ====================
+
+    // 1. TEXT FIELDS - Alphabetic Characters Only
+    const textOnlyFields = ['full_name', 'father_name', 'mother_name', 'distinguishing_mark'];
+
+    textOnlyFields.forEach(fieldId => {
+        const el = document.getElementById(fieldId);
+        if (!el) return;
+
+        // Block invalid characters on keydown
+        el.addEventListener('keydown', function (e) {
+            // Allow: backspace, delete, tab, escape, enter, arrows
+            if ([8, 9, 27, 13, 37, 38, 39, 40].includes(e.keyCode)) {
+                return;
+            }
+            // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+            if (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) {
+                return;
+            }
+            // Block numbers and special characters
+            if (e.key.length === 1 && !/^[A-Za-z\s]$/.test(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        // Clean invalid characters on input (catches paste, drag-drop, etc.)
+        el.addEventListener('input', function () {
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            const original = this.value;
+            // Allow only letters and spaces
+            const cleaned = original.replace(/[^A-Za-z\s]/g, '');
+            // Remove leading spaces
+            const trimmed = cleaned.replace(/^\s+/, '');
+            if (original !== trimmed) {
+                this.value = trimmed;
+                // Restore cursor position
+                const diff = original.length - trimmed.length;
+                this.setSelectionRange(Math.max(0, start - diff), Math.max(0, end - diff));
+            }
+        });
+
+        // Validate paste event
+        el.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const paste = (e.clipboardData || window.clipboardData).getData('text');
+            // Allow only letters and spaces
+            const cleaned = paste.replace(/[^A-Za-z\s]/g, '').replace(/^\s+/, '');
+            document.execCommand('insertText', false, cleaned);
+        });
+    });
+
+    // 2. NUMBER FIELDS - Digits Only
+    const numberOnlyFields = ['mobile_number', 'aadhaar_number', 'alternative_mobile', 'abc_id', 'annual_income'];
+
+    numberOnlyFields.forEach(fieldId => {
+        const el = document.getElementById(fieldId);
+        if (!el) return;
+
+        // Block non-digit characters on keydown
+        el.addEventListener('keydown', function (e) {
+            // Allow: backspace, delete, tab, escape, enter, arrows
+            if ([8, 9, 27, 13, 37, 38, 39, 40].includes(e.keyCode)) {
+                return;
+            }
+            // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+            if (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) {
+                return;
+            }
+            // Block letters and special characters
+            if (e.key.length === 1 && !/^[0-9]$/.test(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        // Clean non-digit characters on input
+        el.addEventListener('input', function () {
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            const original = this.value;
+            // Allow only digits
+            let cleaned = original.replace(/\D/g, '');
+
+            // Special handling for fields that cannot start with 0
+            if (['mobile_number', 'aadhaar_number', 'alternative_mobile'].includes(fieldId)) {
+                // Remove leading zeros
+                while (cleaned.startsWith('0')) {
+                    cleaned = cleaned.substring(1);
+                }
+            }
+
+            // Enforce maxlength
+            const maxLength = parseInt(this.getAttribute('maxlength')) || 100;
+            cleaned = cleaned.substring(0, maxLength);
+
+            if (original !== cleaned) {
+                this.value = cleaned;
+                const diff = original.length - cleaned.length;
+                this.setSelectionRange(Math.max(0, start - diff), Math.max(0, end - diff));
+            }
+        });
+
+        // Validate paste event
+        el.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const paste = (e.clipboardData || window.clipboardData).getData('text');
+            // Allow only digits
+            let cleaned = paste.replace(/\D/g, '');
+
+            // Special handling for fields that cannot start with 0
+            if (['mobile_number', 'aadhaar_number', 'alternative_mobile'].includes(fieldId)) {
+                while (cleaned.startsWith('0')) {
+                    cleaned = cleaned.substring(1);
+                }
+            }
+
+            // Enforce maxlength
+            const maxLength = parseInt(this.getAttribute('maxlength')) || 100;
+            cleaned = cleaned.substring(0, maxLength);
+
+            document.execCommand('insertText', false, cleaned);
+        });
+    });
+
+    // 3. PERCENTAGE FIELD - Special validation
+    const pctInput = document.getElementById('percentage');
+    if (pctInput) {
+        let lastValidVal = pctInput.value || '';
+
+        // Block invalid characters on keydown
+        pctInput.addEventListener('keydown', function (e) {
+            // Allow: backspace, delete, tab, escape, enter, arrows
+            if ([8, 9, 27, 13, 37, 38, 39, 40].includes(e.keyCode)) {
+                return;
+            }
+            // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+            if (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) {
+                return;
+            }
+            // Allow only digits and single decimal point
+            if (e.key.length === 1) {
+                const currentValue = this.value;
+                // Allow digits
+                if (/^[0-9]$/.test(e.key)) {
+                    return;
+                }
+                // Allow single decimal point if not already present
+                if (e.key === '.' && !currentValue.includes('.')) {
+                    return;
+                }
+                // Block everything else
+                e.preventDefault();
+            }
+        });
+
+        pctInput.addEventListener('input', function () {
+            let originalValue = this.value;
+            let start = this.selectionStart;
+            let end = this.selectionEnd;
+
+            // Clean non-numeric/non-dot characters
+            let cleanVal = originalValue.replace(/[^0-9.]/g, '');
+
+            // Allow only one decimal point
+            const dotIndex = cleanVal.indexOf('.');
+            if (dotIndex !== -1) {
+                const beforeDot = cleanVal.substring(0, dotIndex);
+                const afterDot = cleanVal.substring(dotIndex + 1).replace(/\./g, '');
+                cleanVal = beforeDot + '.' + afterDot;
+            }
+
+            // Validate value range: must be between 0 and 100
+            const parsed = parseFloat(cleanVal);
+            if (!isNaN(parsed) && (parsed > 100 || parsed < 0)) {
+                // Revert to last valid value
+                this.value = lastValidVal;
+                this.setSelectionRange(start - 1, end - 1);
+                return;
+            }
+
+            // Limit decimal places to 2
+            if (dotIndex !== -1 && cleanVal.length - dotIndex - 1 > 2) {
+                cleanVal = cleanVal.substring(0, dotIndex + 3);
+            }
+
+            if (this.value !== cleanVal) {
+                this.value = cleanVal;
+                const removedChars = originalValue.length - cleanVal.length;
+                this.setSelectionRange(Math.max(0, start - removedChars), Math.max(0, end - removedChars));
+            }
+            lastValidVal = cleanVal;
+        });
+
+        pctInput.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const paste = (e.clipboardData || window.clipboardData).getData('text');
+            // Allow only digits and decimal point
+            let cleaned = paste.replace(/[^0-9.]/g, '');
+
+            // Allow only one decimal point
+            const dotIndex = cleaned.indexOf('.');
+            if (dotIndex !== -1) {
+                const beforeDot = cleaned.substring(0, dotIndex);
+                const afterDot = cleaned.substring(dotIndex + 1).replace(/\./g, '');
+                cleaned = beforeDot + '.' + afterDot;
+            }
+
+            // Validate range
+            const parsed = parseFloat(cleaned);
+            if (!isNaN(parsed) && parsed >= 0 && parsed <= 100) {
+                // Limit decimal places
+                if (dotIndex !== -1 && cleaned.length - dotIndex - 1 > 2) {
+                    cleaned = cleaned.substring(0, dotIndex + 3);
+                }
+                document.execCommand('insertText', false, cleaned);
+            }
+        });
+
+        pctInput.addEventListener('blur', function () {
+            let val = this.value;
+            if (val.endsWith('.')) {
+                this.value = val.slice(0, -1);
+            }
+            this.dispatchEvent(new Event('input'));
+        });
+    }
+
+    // 4. HALL TICKET NUMBER - Allow alphanumeric, hyphens, slashes
+    const hallTicketInput = document.getElementById('hall_ticket_number');
+    if (hallTicketInput) {
+        hallTicketInput.addEventListener('keydown', function (e) {
+            // Allow: backspace, delete, tab, escape, enter, arrows
+            if ([8, 9, 27, 13, 37, 38, 39, 40].includes(e.keyCode)) {
+                return;
+            }
+            // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+            if (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) {
+                return;
+            }
+            // Allow only alphanumeric, hyphens, and slashes
+            if (e.key.length === 1 && !/^[A-Za-z0-9\-\/]$/.test(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        hallTicketInput.addEventListener('input', function () {
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            const original = this.value;
+            const cleaned = original.replace(/[^A-Za-z0-9\-\/]/g, '');
+            if (original !== cleaned) {
+                this.value = cleaned;
+                const diff = original.length - cleaned.length;
+                this.setSelectionRange(Math.max(0, start - diff), Math.max(0, end - diff));
+            }
+        });
+
+        hallTicketInput.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const paste = (e.clipboardData || window.clipboardData).getData('text');
+            const cleaned = paste.replace(/[^A-Za-z0-9\-\/]/g, '');
+            document.execCommand('insertText', false, cleaned);
+        });
+    }
+
+    // 5. REGISTRATION NUMBER - Allow alphanumeric
+    const regNumInput = document.getElementById('registration_number');
+    if (regNumInput) {
+        regNumInput.addEventListener('keydown', function (e) {
+            // Allow: backspace, delete, tab, escape, enter, arrows
+            if ([8, 9, 27, 13, 37, 38, 39, 40].includes(e.keyCode)) {
+                return;
+            }
+            // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+            if (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) {
+                return;
+            }
+            // Allow only alphanumeric
+            if (e.key.length === 1 && !/^[A-Za-z0-9]$/.test(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        regNumInput.addEventListener('input', function () {
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            const original = this.value;
+            const cleaned = original.replace(/[^A-Za-z0-9]/g, '');
+            if (original !== cleaned) {
+                this.value = cleaned;
+                const diff = original.length - cleaned.length;
+                this.setSelectionRange(Math.max(0, start - diff), Math.max(0, end - diff));
+            }
+        });
+
+        regNumInput.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const paste = (e.clipboardData || window.clipboardData).getData('text');
+            const cleaned = paste.replace(/[^A-Za-z0-9]/g, '');
+            document.execCommand('insertText', false, cleaned);
+        });
+    }
+
+    // 5b. NIELIT REGISTRATION NUMBER - Allow alphanumeric and hyphens (optional)
+    const nielitInput = document.getElementById('nielit_registration_number');
+    if (nielitInput) {
+        nielitInput.addEventListener('keydown', function (e) {
+            if ([8, 9, 27, 13, 37, 38, 39, 40].includes(e.keyCode)) return;
+            if (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) return;
+            if (e.key.length === 1 && !/^[A-Za-z0-9-]$/.test(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        nielitInput.addEventListener('input', function () {
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            const original = this.value;
+            const cleaned = original.replace(/[^A-Za-z0-9-]/g, '');
+            if (original !== cleaned) {
+                this.value = cleaned;
+                const diff = original.length - cleaned.length;
+                this.setSelectionRange(Math.max(0, start - diff), Math.max(0, end - diff));
+            }
+        });
+
+        nielitInput.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const paste = (e.clipboardData || window.clipboardData).getData('text');
+            const cleaned = paste.replace(/[^A-Za-z0-9-]/g, '');
+            document.execCommand('insertText', false, cleaned);
+        });
+    }
+
+    // 6. CUSTOM STREAM - Allow alphanumeric, spaces, hyphens, slashes, ampersand, parentheses
+    const customStreamInput = document.getElementById('custom_stream');
+    if (customStreamInput) {
+        customStreamInput.addEventListener('keydown', function (e) {
+            // Allow: backspace, delete, tab, escape, enter, arrows
+            if ([8, 9, 27, 13, 37, 38, 39, 40].includes(e.keyCode)) {
+                return;
+            }
+            // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+            if (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) {
+                return;
+            }
+            // Allow only alphanumeric, spaces, hyphens, slashes, ampersand, parentheses
+            if (e.key.length === 1 && !/^[A-Za-z0-9\s\-\/&\(\)]$/.test(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        customStreamInput.addEventListener('input', function () {
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            const original = this.value;
+            const cleaned = original.replace(/[^A-Za-z0-9\s\-\/&\(\)]/g, '');
+            if (original !== cleaned) {
+                this.value = cleaned;
+                const diff = original.length - cleaned.length;
+                this.setSelectionRange(Math.max(0, start - diff), Math.max(0, end - diff));
+            }
+        });
+
+        customStreamInput.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const paste = (e.clipboardData || window.clipboardData).getData('text');
+            const cleaned = paste.replace(/[^A-Za-z0-9\s\-\/&\(\)]/g, '');
+            document.execCommand('insertText', false, cleaned);
+        });
+    }
+
+    // 7. BATCH CODE - Allow alphanumeric
+    const batchCodeInput = document.getElementById('batch_code');
+    if (batchCodeInput && !batchCodeInput.readOnly) {
+        batchCodeInput.addEventListener('keydown', function (e) {
+            // Allow: backspace, delete, tab, escape, enter, arrows
+            if ([8, 9, 27, 13, 37, 38, 39, 40].includes(e.keyCode)) {
+                return;
+            }
+            // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+            if (e.ctrlKey && [65, 67, 86, 88].includes(e.keyCode)) {
+                return;
+            }
+            // Allow only alphanumeric
+            if (e.key.length === 1 && !/^[A-Za-z0-9]$/.test(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        batchCodeInput.addEventListener('input', function () {
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            const original = this.value;
+            const cleaned = original.replace(/[^A-Za-z0-9]/g, '');
+            if (original !== cleaned) {
+                this.value = cleaned;
+                const diff = original.length - cleaned.length;
+                this.setSelectionRange(Math.max(0, start - diff), Math.max(0, end - diff));
+            }
+        });
+
+        batchCodeInput.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const paste = (e.clipboardData || window.clipboardData).getData('text');
+            const cleaned = paste.replace(/[^A-Za-z0-9]/g, '');
+            document.execCommand('insertText', false, cleaned);
+        });
+    }
+
+    function setPincodeStatus(message, tone = 'muted') {
+        const statusEl = document.getElementById('pincode_status');
+        if (!statusEl) return;
+        statusEl.className = 'form-text small mt-1';
+
+        if (tone === 'loading') {
+            statusEl.classList.add('text-primary');
+            statusEl.innerHTML = '<span class="spinner-border spinner-border-sm me-1 align-middle" role="status" aria-hidden="true"></span>' + (message || 'Fetching pincode details...');
+            return;
+        }
+
+        statusEl.textContent = message || '';
+        if (tone === 'success') statusEl.classList.add('text-success');
+        else if (tone === 'error') statusEl.classList.add('text-danger');
+        else statusEl.classList.add('text-muted');
+    }
+
+    function renderAreaVillageField(options = [], selectedValue = '') {
+        const group = document.getElementById('area_village_group');
+        if (!group) return;
+
+        const existingSelect = document.getElementById('area_village_select');
+        const input = document.getElementById('area_village_name');
+
+        if (existingSelect) existingSelect.remove();
+
+        if (options.length > 1) {
+            const select = document.createElement('select');
+            select.id = 'area_village_select';
+            select.name = 'area_village_name';
+            select.className = 'form-select';
+            select.required = true;
+
+            const chooseOption = document.createElement('option');
+            chooseOption.value = '';
+            chooseOption.textContent = 'Choose area or village';
+            chooseOption.disabled = true;
+            chooseOption.selected = !selectedValue;
+            select.appendChild(chooseOption);
+
+            options.forEach(option => {
+                const optionEl = document.createElement('option');
+                optionEl.value = option.value;
+                optionEl.textContent = option.label;
+                if (selectedValue === option.value) optionEl.selected = true;
+                select.appendChild(optionEl);
+            });
+
+            if (input) {
+                input.hidden = true;
+                input.disabled = true;
+                input.removeAttribute('name');
+            }
+            group.appendChild(select);
+            return;
+        }
+
+        if (input) {
+            input.hidden = false;
+            input.disabled = false;
+            input.name = 'area_village_name';
+            input.value = selectedValue || input.value || '';
+            input.setAttribute('required', 'required');
+        }
+    }
+
+    const pincodeInput = document.getElementById('pincode');
+    if (pincodeInput) {
+        pincodeInput.addEventListener('input', function () {
+            // Pincode is now independent. Do not modify State or District, and do not call
+            // any pincode lookup API. Only update a muted status for user feedback.
+            if (this.value.length < 6) {
+                setPincodeStatus('', 'muted');
+            } else if (this.value.length === 6) {
+                setPincodeStatus('Pincode entered.', 'success');
+            } else {
+                setPincodeStatus('', 'muted');
+            }
+        });
+    }
+
+    const areaVillageSelect = document.getElementById('area_village_select');
+    if (areaVillageSelect) {
+        areaVillageSelect.addEventListener('change', function () {
+            const areaField = document.getElementById('area_village_name');
+            if (areaField) {
+                areaField.value = this.value;
+                areaField.dataset.autoFilled = 'true';
+            }
+            setPincodeStatus('Area selected.', 'success');
+        });
+    }
+
+    // File name display handlers for all custom upload controls
+    const fileInputs = [
+        'upload_passport_photo',
+        'upload_signature',
+        'upload_left_thumb',
+        'upload_father_signature',
+        'upload_aadhaar',
+        'upload_community_certificate',
+        'upload_additional_documents',
+        'upload_abc_id'
+    ];
+
+    // =====================================================================
+    // SHARED PREVIEW MODAL (image + PDF)
+    // =====================================================================
+    const previewModal = document.getElementById('preview-modal');
+    const previewModalBody = document.getElementById('preview-modal-body');
+    const previewModalTitle = document.getElementById('preview-modal-title');
+    const previewModalClose = document.getElementById('preview-modal-close');
+
+    const inputGroupMap = {
+        'upload_passport_photo': 'group-passport-photo',
+        'upload_signature': 'group-signature',
+        'upload_aadhaar': 'aadhaar_container',
+        'upload_left_thumb': 'group-thumb-impression',
+        'upload_abc_id': 'group-abc-id',
+        'upload_father_signature': 'group-father-signature',
+        'upload_community_certificate': 'group-community-cert',
+        'upload_additional_documents': 'group-additional-docs'
+    };
+
+    const groupFriendlyName = {
+        'group-passport-photo': 'Passport Size Photograph',
+        'group-signature': 'Signature',
+        'aadhaar_container': 'Aadhaar Card',
+        'group-thumb-impression': 'Thumb Impression',
+        'group-abc-id': 'Appari Id (ABC Id)',
+        'group-father-signature': "Father's/Guardian's Signature",
+        'group-community-cert': 'Community Certificate',
+        'group-additional-docs': 'Additional Documents'
+    };
+
+    // Tracks object URLs for each input so we can revoke safely.
+    const liveObjectUrls = Object.create(null);
+
+    function revokeObjectUrlForInput(inputId) {
+        if (liveObjectUrls[inputId]) {
+            try { URL.revokeObjectURL(liveObjectUrls[inputId]); } catch (e) { }
+            delete liveObjectUrls[inputId];
+        }
+    }
+
+    function guessTypeFromFile(file) {
+        if (!file) return null;
+        if (file.type && file.type.indexOf('pdf') !== -1) return 'pdf';
+        if (file.type && file.type.indexOf('image') === 0) return 'image';
+        const name = (file.name || '').toLowerCase();
+        if (name.endsWith('.pdf')) return 'pdf';
+        if (/\.(jpe?g|png|gif|bmp|webp)$/.test(name)) return 'image';
+        return null;
+    }
+
+    function guessTypeFromUrl(url) {
+        const clean = (url || '').split('?')[0].toLowerCase();
+        if (clean.indexOf('.pdf') !== -1) return 'pdf';
+        if (/\.(jpe?g|png|gif|bmp|webp)$/.test(clean)) return 'image';
+        return null;
+    }
+
+    function emptyModalBodyLoading() {
+        previewModalBody.innerHTML =
+            '<div class="preview-modal-message">' +
+            '<span class="material-icons-round">hide_image</span>' +
+            '<p>Preparing preview…</p>' +
+            '</div>';
+    }
+
+    function renderPreviewMessage(options) {
+        const icon = options.icon || 'broken_image';
+        const text = options.text || 'Preview is not available for this file.';
+        const extra = options.extra || '';
+        previewModalBody.innerHTML =
+            '<div class="preview-modal-message">' +
+            '<span class="material-icons-round">' + icon + '</span>' +
+            '<p>' + text + '</p>' +
+            (extra ? '<div class="fallback-link">' + extra + '</div>' : '') +
+            '</div>';
+    }
+
+    function openPreviewFor(options) {
+        const title = options.title || 'Preview';
+        previewModalTitle.textContent = title;
+        emptyModalBodyLoading();
+        previewModal.classList.add('open');
+        previewModal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+
+        const src = options.src;
+        const type = options.type;
+
+        if (!src) {
+            renderPreviewMessage({ icon: 'folder_off', text: 'No file is available to preview yet. Please select a file first.' });
+            return;
+        }
+
+        if (type === 'image') {
+            const img = new Image();
+            img.onload = function () {
+                previewModalBody.innerHTML =
+                    '<div class="preview-modal-image-wrapper">' +
+                    '<img class="preview-modal-image" id="preview-modal-img-element" alt="' + title + '">' +
+                    '</div>';
+                document.getElementById('preview-modal-img-element').src = src;
+            };
+            img.onerror = function () {
+                const fallback = '<a class="btn btn-sm btn-outline-primary" href="' + src + '" target="_blank" rel="noopener">Open file in a new tab</a>';
+                renderPreviewMessage({ icon: 'broken_image', text: 'Unable to preview this image. Your browser may not support this file format.', extra: fallback });
+            };
+            img.src = src;
+        } else if (type === 'pdf') {
+            const canIframe = true;
+            if (canIframe) {
+                previewModalBody.innerHTML =
+                    '<div class="preview-modal-pdf-wrapper">' +
+                    '<iframe id="preview-modal-pdf-frame" src="' + src + '#toolbar=1&navpanes=0" title="' + title + ' PDF preview"></iframe>' +
+                    '</div>';
+                // Some browsers block PDF rendering inside iframe, so add a small safeguard with a backup link
+                const frame = document.getElementById('preview-modal-pdf-frame');
+                let loaded = false;
+                frame.onload = function () { loaded = true; };
+                setTimeout(function () {
+                    if (!loaded) {
+                        const fallback = '<a class="btn btn-sm btn-outline-primary" href="' + src + '" target="_blank" rel="noopener">Open PDF in a new tab</a>';
+                        renderPreviewMessage({ icon: 'picture_as_pdf', text: 'This browser is unable to preview this PDF inline.', extra: fallback });
+                    }
+                }, 2500);
+            }
+        } else {
+            const fallback = '<a class="btn btn-sm btn-outline-primary" href="' + src + '" target="_blank" rel="noopener">Open file in a new tab</a>';
+            renderPreviewMessage({ icon: 'insert_drive_file', text: 'Preview is not available for this file type. You can open it directly using the link below.', extra: fallback });
+        }
+    }
+
+    function closePreviewModal() {
+        previewModal.classList.remove('open');
+        previewModal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        // Clear body to stop PDF playback and free iframe/image memory
+        previewModalBody.innerHTML =
+            '<div class="preview-modal-message">' +
+            '<span class="material-icons-round">hide_image</span>' +
+            '<p>Preparing preview…</p>' +
+            '</div>';
+    }
+
+    if (previewModalClose) {
+        previewModalClose.addEventListener('click', closePreviewModal);
+    }
+    if (previewModal) {
+        previewModal.addEventListener('click', function (e) {
+            if (e.target === previewModal) closePreviewModal();
+        });
+    }
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && previewModal && previewModal.classList.contains('open')) {
+            closePreviewModal();
+        }
+    });
+
+    // Given a preview button, find the group and resolve preview info.
+    function resolvePreviewInfoFromButton(buttonEl) {
+        const inputId = buttonEl.getAttribute('data-for-input') || (buttonEl.closest('[data-for-input]') && buttonEl.closest('[data-for-input]').getAttribute('data-for-input'));
+        let groupEl = null;
+        let actualInputId = inputId;
+        if (actualInputId && inputGroupMap[actualInputId]) {
+            groupEl = document.getElementById(inputGroupMap[actualInputId]);
+        }
+        if (!groupEl) {
+            // fallback: walk up until we find group id in map
+            let cur = buttonEl;
+            while (cur && cur !== document.body) {
+                if (cur.id && Object.prototype.hasOwnProperty.call(groupFriendlyName, cur.id)) {
+                    groupEl = cur;
+                    for (const k in inputGroupMap) if (inputGroupMap[k] === cur.id) { actualInputId = k; break; }
+                    break;
+                }
+                cur = cur.parentElement;
+            }
+        }
+        if (!groupEl) return null;
+
+        const title = groupFriendlyName[groupEl.id] || 'Preview';
+        const input = actualInputId ? document.getElementById(actualInputId) : null;
+        const hasObjectUrl = actualInputId && liveObjectUrls[actualInputId];
+
+        // 1) If user selected a local file (object URL created on change), preview that.
+        if (actualInputId && hasObjectUrl) {
+            // type from actual file for accuracy
+            const f = input.files && input.files[0];
+            const t = guessTypeFromFile(f);
+            if (t) return { title: title, src: liveObjectUrls[actualInputId], type: t };
+            // else fall back but still show (guessed)
+            const t2 = guessTypeFromUrl(liveObjectUrls[actualInputId]);
+            if (t2) return { title: title, src: liveObjectUrls[actualInputId], type: t2 };
+        }
+
+        // 2) New local file selected but object URL not yet tracked (rare path)
+        if (input && input.files && input.files[0]) {
+            const f = input.files[0];
+            const t = guessTypeFromFile(f);
+            if (t) {
+                revokeObjectUrlForInput(actualInputId);
+                const url = URL.createObjectURL(f);
+                liveObjectUrls[actualInputId] = url;
+                return { title: title, src: url, type: t };
+            }
+        }
+
+        // 3) Already uploaded — use server data-uploaded-src
+        const uploadedSrc = groupEl.getAttribute('data-uploaded-src');
+        const uploadedType = groupEl.getAttribute('data-uploaded-type') || guessTypeFromUrl(uploadedSrc);
+        if (uploadedSrc) {
+            return { title: title, src: uploadedSrc, type: uploadedType };
+        }
+
+        // 4) Nothing available
+        return { title: title, src: null, type: null };
+    }
+
+    // Attach click handlers to all preview buttons.
+    function attachPreviewHandlers() {
+        const buttons = document.querySelectorAll('.preview-btn[data-preview-passport], .preview-btn[data-preview-signature], .preview-btn[data-preview-aadhaar], .preview-btn[data-preview-thumb], .preview-btn[data-preview-abc], .preview-btn[data-preview-fsig], .preview-btn[data-preview-community], .preview-btn[data-preview-additional]');
+        buttons.forEach(function (btn) {
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                const info = resolvePreviewInfoFromButton(btn);
+                if (!info) return;
+                openPreviewFor(info);
+            });
+        });
+    }
+    attachPreviewHandlers();
+
+    fileInputs.forEach(function (inputId) {
+        const input = document.getElementById(inputId);
+        const display = document.getElementById('filename-' + inputId);
+        if (!input || !display) return;
+
+        input.addEventListener('change', function () {
+            // Clean up any previous local preview object URL for this input
+            revokeObjectUrlForInput(inputId);
+
+            if (this.files && this.files.length > 0) {
+                const f = this.files[0];
+                display.textContent = f.name;
+                display.classList.remove('placeholder');
+
+                // Pre-create object URL for immediate preview.
+                const t = guessTypeFromFile(f);
+                if (t) {
+                    try {
+                        liveObjectUrls[inputId] = URL.createObjectURL(f);
+                    } catch (e) {
+                        delete liveObjectUrls[inputId];
+                    }
+                }
+            } else {
+                display.textContent = 'No file chosen';
+                display.classList.add('placeholder');
+            }
+        });
+    });
+
+    // Async Aadhaar PDF Upload & Compression
+    const aadhaarInput = document.getElementById('upload_aadhaar');
+    const aadhaarSpinner = document.getElementById('aadhaar_spinner');
+    const aadhaarSuccess = document.getElementById('aadhaar_success');
+    const aadhaarInitialSuccess = document.getElementById('aadhaar_initial_success');
+    const aadhaarFilenameDisplay = document.getElementById('filename-upload_aadhaar');
+    const aadhaarInitialControl = document.getElementById('aadhaar_initial_control');
+
+    if (aadhaarInput) {
+        aadhaarInput.addEventListener('change', function () {
+            if (this.files.length === 0) return;
+            const file = this.files[0];
+
+            // clear previous states
+            aadhaarInput.classList.remove('is-invalid');
+            clearError('upload_aadhaar');
+
+            if (file.type !== 'application/pdf') {
+                showError('upload_aadhaar', 'Must be a PDF file.');
+                this.value = '';
+                revokeObjectUrlForInput('upload_aadhaar');
+                if (aadhaarFilenameDisplay) {
+                    aadhaarFilenameDisplay.textContent = 'No file chosen';
+                    aadhaarFilenameDisplay.classList.add('placeholder');
+                }
+                return;
+            }
+
+            // Pre-create local object URL so user can preview even while compressing.
+            revokeObjectUrlForInput('upload_aadhaar');
+            try {
+                liveObjectUrls['upload_aadhaar'] = URL.createObjectURL(file);
+            } catch (e) { }
+
+            // Show spinner, hide initial success state
+            if (aadhaarInitialSuccess) aadhaarInitialSuccess.classList.add('d-none');
+            if (aadhaarSuccess) {
+                aadhaarSuccess.classList.add('d-none');
+            }
+            if (aadhaarSpinner) {
+                aadhaarSpinner.classList.remove('d-none');
+            }
+
+            const formData = new FormData();
+            formData.append('upload_aadhaar', file);
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+            fetch('{% url "async_upload_pdf" %}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (aadhaarSpinner) {
+                        aadhaarSpinner.classList.add('d-none');
+                    }
+
+                    if (data.success) {
+                        if (aadhaarFilenameDisplay) {
+                            aadhaarFilenameDisplay.textContent = data.filename;
+                            aadhaarFilenameDisplay.classList.remove('placeholder');
+                        }
+                        const successText = document.getElementById('aadhaar_success_text');
+                        if (successText) {
+                            successText.textContent = 'Already uploaded';
+                        }
+                        if (aadhaarSuccess) {
+                            aadhaarSuccess.classList.remove('d-none');
+                        }
+                        // Update container's server URL so Preview uses compressed/saved file now
+                        const container = document.getElementById('aadhaar_container');
+                        if (container && data.url) {
+                            container.setAttribute('data-uploaded-src', data.url);
+                            container.setAttribute('data-uploaded-type', 'pdf');
+                            container.setAttribute('data-uploaded-name', 'Aadhaar Card');
+                        }
+                        // Clear local blob in favor of the server URL for future preview calls
+                        revokeObjectUrlForInput('upload_aadhaar');
+                        aadhaarInput.value = ''; // Clear input so it's not submitted again synchronously
+                    } else {
+                        aadhaarInput.value = '';
+                        if (aadhaarFilenameDisplay && !aadhaarInitialSuccess) {
+                            aadhaarFilenameDisplay.textContent = 'No file chosen';
+                            aadhaarFilenameDisplay.classList.add('placeholder');
+                        }
+                        revokeObjectUrlForInput('upload_aadhaar');
+                        showError('upload_aadhaar', data.error);
+                    }
+                })
+                .catch(err => {
+                    if (aadhaarSpinner) {
+                        aadhaarSpinner.classList.add('d-none');
+                    }
+                    aadhaarInput.value = '';
+                });
+        });
+    }
+
+    // Annual Income Currency Format and Words Conversion
+    const incomeInput = document.getElementById('annual_income');
+    const incomeWordsDiv = document.getElementById('annual_income_words');
+
+    function formatIndianRupees(value) {
+        if (!value) return '';
+        let numStr = value.toString().replace(/[^0-9]/g, '');
+        if (!numStr) return '';
+        // Remove leading zeros unless it's just '0'
+        if (numStr.length > 1 && numStr.startsWith('0')) {
+            numStr = numStr.replace(/^0+/, '');
+        }
+        if (numStr === '') return '';
+
+        let lastThree = numStr.substring(numStr.length - 3);
+        let otherNumbers = numStr.substring(0, numStr.length - 3);
+        if (otherNumbers != '') {
+            lastThree = ',' + lastThree;
+        }
+        let res = otherNumbers.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + lastThree;
+        return '₹' + res;
+    }
+
+    function numToWordsIndian(num) {
+        if (num === 0) return 'Zero Rupees Only';
+        if (!num) return '';
+
+        num = Math.floor(num);
+
+        const a = [
+            '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
+            'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'
+        ];
+        const b = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+        function helper(n) {
+            if (n < 20) return a[n];
+            if (n < 100) return b[Math.floor(n / 10)] + (n % 10 !== 0 ? '-' + a[n % 10] : '');
+            if (n < 1000) return a[Math.floor(n / 100)] + ' Hundred' + (n % 100 !== 0 ? ' ' + helper(n % 100) : '');
+            return '';
+        }
+
+        let words = '';
+
+        if (num >= 10000000) {
+            const crores = Math.floor(num / 10000000);
+            words += helper(crores) + ' Crore ';
+            num %= 10000000;
+        }
+        if (num >= 100000) {
+            const lakhs = Math.floor(num / 100000);
+            words += helper(lakhs) + ' Lakh ';
+            num %= 100000;
+        }
+        if (num >= 1000) {
+            const thousands = Math.floor(num / 1000);
+            words += helper(thousands) + ' Thousand ';
+            num %= 1000;
+        }
+        if (num > 0) {
+            words += helper(num);
+        }
+
+        words = words.trim().replace(/\s+/g, ' ');
+        if (words) {
+            return words + ' Rupees Only';
+        }
+        return '';
+    }
+
+    if (incomeInput) {
+        const handleIncomeInput = () => {
+            let selectionStart = incomeInput.selectionStart;
+            let selectionEnd = incomeInput.selectionEnd;
+            let originalLength = incomeInput.value.length;
+
+            let rawVal = incomeInput.value.replace(/[^0-9]/g, '');
+
+            if (rawVal === '') {
+                incomeInput.value = '';
+                incomeWordsDiv.style.display = 'none';
+                incomeWordsDiv.textContent = '';
+                return;
+            }
+
+            let formatted = formatIndianRupees(rawVal);
+            incomeInput.value = formatted;
+
+            let numVal = parseInt(rawVal, 10);
+            if (!isNaN(numVal)) {
+                incomeWordsDiv.textContent = numToWordsIndian(numVal);
+                incomeWordsDiv.style.display = 'block';
+            } else {
+                incomeWordsDiv.style.display = 'none';
+                incomeWordsDiv.textContent = '';
+            }
+
+            let newLength = incomeInput.value.length;
+            let diff = newLength - originalLength;
+            if (selectionStart !== null) {
+                incomeInput.setSelectionRange(selectionStart + diff, selectionEnd + diff);
+            }
+        };
+
+        incomeInput.addEventListener('input', handleIncomeInput);
+
+        // Initial format if value exists
+        if (incomeInput.value) {
+            handleIncomeInput();
+        }
+    }
+
+    // -------------------------------------------------------------
+    // Find Your Registration / Continue Registration Handler
+    // -------------------------------------------------------------
+    const findSearchBy = document.getElementById('findSearchBy');
+    const findSearchInput = document.getElementById('findSearchInput');
+    const findSearchLabel = document.getElementById('findSearchLabel');
+    const findInputIcon = document.getElementById('findInputIcon');
+    const findSearchError = document.getElementById('findSearchError');
+    const btnContinueFind = document.getElementById('btnContinueFind');
+    const btnContinueFindText = document.getElementById('btnContinueFindText');
+    const findResultContainer = document.getElementById('findResultContainer');
+    const registrationForm = document.getElementById('registrationForm');
+
+    if (findSearchBy && findSearchInput && btnContinueFind) {
+        findSearchBy.addEventListener('change', function () {
+            findSearchInput.value = '';
+            findSearchInput.classList.remove('is-invalid');
+            if (findSearchError) findSearchError.textContent = '';
+            if (findResultContainer) findResultContainer.style.display = 'none';
+
+            if (this.value === 'aadhaar') {
+                findSearchLabel.innerHTML = 'Enter your Aadhaar Number <span class="text-danger">*</span>';
+                findSearchInput.placeholder = 'Enter 12-digit Aadhaar Number';
+                findSearchInput.maxLength = 12;
+                findSearchInput.setAttribute('inputmode', 'numeric');
+                if (findInputIcon) {
+                    findInputIcon.innerHTML = '<span class="material-icons-round fs-5">fingerprint</span>';
+                }
+            } else {
+                findSearchLabel.innerHTML = 'Enter your Email Address <span class="text-danger">*</span>';
+                findSearchInput.placeholder = 'Enter your Email Address (e.g. name@example.com)';
+                findSearchInput.maxLength = 100;
+                findSearchInput.setAttribute('inputmode', 'email');
+                if (findInputIcon) {
+                    findInputIcon.innerHTML = '<span class="material-icons-round fs-5">email</span>';
+                }
+            }
+            findSearchInput.focus();
+        });
+
+        findSearchInput.addEventListener('input', function () {
+            this.classList.remove('is-invalid');
+            if (findSearchError) findSearchError.textContent = '';
+            if (findSearchBy.value === 'aadhaar') {
+                this.value = this.value.replace(/[^0-9]/g, '');
+            }
+        });
+
+        findSearchInput.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                btnContinueFind.click();
+            }
+        });
+
+        btnContinueFind.addEventListener('click', function () {
+            const searchBy = findSearchBy.value;
+            const rawVal = findSearchInput.value.trim();
+
+            if (!rawVal) {
+                showFindError(searchBy === 'aadhaar' ? 'Please enter your 12-digit Aadhaar Number.' : 'Please enter your Email Address.');
+                return;
+            }
+
+            if (searchBy === 'aadhaar') {
+                const cleanAadhaar = rawVal.replace(/[^0-9]/g, '');
+                if (cleanAadhaar.length !== 12) {
+                    showFindError('Aadhaar Number must be exactly 12 digits.');
+                    return;
+                }
+            } else {
+                const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                if (!emailRegex.test(rawVal)) {
+                    showFindError('Please enter a valid Email Address format (e.g. name@example.com).');
+                    return;
+                }
+            }
+
+            btnContinueFind.disabled = true;
+            btnContinueFindText.textContent = 'Searching...';
+            const originalIcon = btnContinueFind.querySelector('.material-icons-round');
+            if (originalIcon) originalIcon.style.display = 'none';
+
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || '';
+            const formData = new FormData();
+            formData.append('csrfmiddlewaretoken', csrfToken);
+            formData.append('search_by', searchBy);
+            formData.append('search_value', rawVal);
+
+            fetch('/api/find-registration/', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+            .then(res => res.json())
+            .then(data => {
+                resetFindButton();
+                if (!data.success) {
+                    showFindError(data.error || 'Unable to complete search. Please try again.');
+                    return;
+                }
+                renderFindResult(data);
+            })
+            .catch(err => {
+                resetFindButton();
+                console.error('Find registration error:', err);
+                showFindError('Server error occurred during lookup. Please try again.');
+            });
+        });
+
+        function showFindError(msg) {
+            findSearchInput.classList.add('is-invalid');
+            if (findSearchError) {
+                findSearchError.textContent = msg;
+                findSearchError.classList.remove('d-none');
+            }
+            findSearchInput.focus();
+        }
+
+        function resetFindButton() {
+            btnContinueFind.disabled = false;
+            btnContinueFindText.textContent = 'Continue';
+            const originalIcon = btnContinueFind.querySelector('.material-icons-round');
+            if (originalIcon) originalIcon.style.display = 'inline-block';
+        }
+
+        function renderFindResult(data) {
+            if (!findResultContainer) return;
+            findResultContainer.style.display = 'block';
+
+            if (data.case === 'submitted') {
+                findResultContainer.innerHTML = `
+                    <div class="alert alert-warning border-2 rounded-3 p-4 shadow-sm" role="alert" style="border-color: #ffc107 !important; background-color: #fffdf5;">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="bg-warning text-dark rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px;">
+                                <span class="material-icons-round fs-4">verified_user</span>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h5 class="alert-heading fw-bold text-dark mb-1">Your application has already been submitted.</h5>
+                                <p class="text-secondary mb-3">
+                                    An application has already been submitted and registered in the system. Duplicate applications cannot be created using the same identity.
+                                </p>
+                                <div class="bg-white p-3 rounded-3 border d-flex flex-wrap gap-4 align-items-center justify-content-start">
+                                    <div class="me-4">
+                                        <span class="text-muted d-block small fw-semibold">Status</span>
+                                        <span class="badge bg-success text-white px-3 py-1 rounded-pill fw-semibold fs-6">${data.details.status}</span>
+                                    </div>
+                                    <div class="me-4">
+                                        <span class="text-muted d-block small fw-semibold">Submission Date</span>
+                                        <strong class="text-dark fs-6">${data.details.submission_date}</strong>
+                                    </div>
+                                    <div>
+                                        <span class="text-muted d-block small fw-semibold">Aadhaar Number</span>
+                                        <code class="text-dark fw-bold fs-6">${data.details.masked_aadhaar}</code>
+                                    </div>
+                                </div>
+                                <div class="mt-3 text-muted small">
+                                    <span class="material-icons-round fs-6 align-middle me-1">lock</span>
+                                    The registration form is locked to prevent duplicate submissions. If you need any corrections, please contact support.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                if (registrationForm) {
+                    registrationForm.style.opacity = '0.4';
+                    registrationForm.style.pointerEvents = 'none';
+                }
+            } else if (data.case === 'draft') {
+                findResultContainer.innerHTML = `
+                    <div class="alert alert-success border-2 rounded-3 p-4 shadow-sm" role="alert" style="border-color: #198754 !important; background-color: #f6fcf8;">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="bg-success text-white rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px;">
+                                <span class="material-icons-round fs-4">restore_page</span>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h5 class="alert-heading fw-bold text-success mb-1">Your saved registration details have been found.</h5>
+                                <p class="text-secondary mb-3">
+                                    You can continue your registration from where you left off. All your previously entered details and uploaded documents remain intact.
+                                </p>
+                                <div class="bg-white p-3 rounded-3 border d-flex flex-wrap gap-4 align-items-center justify-content-between mb-3">
+                                    <div>
+                                        <span class="text-muted d-block small">Saved Record For</span>
+                                        <code class="text-dark fw-bold">${data.details.identifier_masked}</code>
+                                    </div>
+                                    ${data.last_updated ? `<div><span class="text-muted d-block small">Last Saved</span><strong class="text-dark">${data.last_updated}</strong></div>` : ''}
+                                    <div>
+                                        <span class="text-muted d-block small">Completed Sections</span>
+                                        <span class="badge bg-primary text-white rounded-pill px-2 py-1">${data.details.completed_count} of 4 Completed</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-success fw-bold px-4 py-2 d-inline-flex align-items-center gap-2 rounded-pill shadow-sm" id="btnResumeRegistrationAction">
+                                        <span class="material-icons-round fs-5">play_arrow</span>
+                                        Continue Registration
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                const btnResume = document.getElementById('btnResumeRegistrationAction');
+                if (btnResume) {
+                    btnResume.addEventListener('click', function () {
+                        window.location.href = data.redirect_url;
+                    });
+                }
+                if (registrationForm) {
+                    registrationForm.style.opacity = '1';
+                    registrationForm.style.pointerEvents = 'auto';
+                }
+            } else if (data.case === 'not_found') {
+                findResultContainer.innerHTML = `
+                    <div class="alert alert-info border-2 rounded-3 p-4 shadow-sm" role="alert" style="border-color: #0dcaf0 !important; background-color: #f4fbfe;">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="bg-info text-white rounded-circle p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px;">
+                                <span class="material-icons-round fs-4">person_add</span>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h5 class="alert-heading fw-bold text-dark mb-1">No registration found.</h5>
+                                <p class="text-secondary mb-3">
+                                    No registration was found with the provided ${data.search_by_label}. You can start a new registration.
+                                </p>
+                                <div class="d-flex flex-wrap align-items-center gap-3">
+                                    <button type="button" class="btn btn-primary fw-bold px-4 py-2 d-inline-flex align-items-center gap-2 rounded-pill shadow-sm" id="btnStartNewRegAction">
+                                        <span class="material-icons-round fs-5">edit_note</span>
+                                        Start New Registration
+                                    </button>
+                                    <span class="text-muted small">Your ${data.search_by_label} has been carried forward into the form for you.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                if (data.search_by === 'aadhaar') {
+                    const aadhaarInput = document.getElementById('aadhaar_number');
+                    if (aadhaarInput) {
+                        aadhaarInput.value = data.search_value;
+                        aadhaarInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        aadhaarInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                } else if (data.search_by === 'email') {
+                    const emailInput = document.getElementById('email');
+                    if (emailInput) {
+                        emailInput.value = data.search_value;
+                        emailInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        emailInput.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }
+
+                if (registrationForm) {
+                    registrationForm.style.opacity = '1';
+                    registrationForm.style.pointerEvents = 'auto';
+                }
+
+                const btnStartNew = document.getElementById('btnStartNewRegAction');
+                if (btnStartNew) {
+                    btnStartNew.addEventListener('click', function () {
+                        const personalSection = document.getElementById('personal-details');
+                        if (personalSection) {
+                            personalSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            const firstInput = personalSection.querySelector('input:not([type=hidden]), select');
+                            if (firstInput) firstInput.focus();
+                        }
+                    });
+                }
+            }
+        }
+    }
+
+    });
+</script>
+{% endblock %}

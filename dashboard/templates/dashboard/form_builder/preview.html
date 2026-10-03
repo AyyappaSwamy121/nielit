@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} | Form Builder{% endblock %}
+
+{% block extra_css %}
+<style>
+    .preview-shell { border: 1px solid var(--bs-border-color); border-radius: 12px; overflow: hidden; }
+    .preview-bar { background: var(--bs-tertiary-bg); padding: 8px 16px; border-bottom: 1px solid var(--bs-border-color); display: flex; justify-content: space-between; align-items: center; }
+    .preview-frame { padding: 24px; background: var(--bs-body-bg); }
+    .preview-actions { display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid var(--bs-border-color); padding: 12px 16px; background: var(--bs-tertiary-bg); }
+    .section-card { border: 1px solid var(--bs-border-color); border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; }
+    .section-card .section-title { font-weight: 700; font-size: 1.05rem; margin-bottom: 4px; }
+    .field-wrap { margin-bottom: 1.1rem; }
+    .field-wrap label { font-weight: 500; }
+    .field-wrap .req { color: #dc3545; }
+    .field-wrap .help { color: var(--bs-secondary-color); font-size: .8rem; }
+    .cgpa-helper { display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; row-gap: 4px; margin-top: 6px; font-size: .82rem; }
+    .cgpa-helper span { color: var(--bs-secondary-color); }
+    .cgpa-calc-link { display: inline-flex; align-items: center; gap: 4px; color: #0d6efd; font-weight: 600; text-decoration: none; border-bottom: 1px dashed #86b7fe; transition: color .15s ease, border-color .15s ease; white-space: nowrap; }
+    .cgpa-calc-link:hover { color: #0b5ed7; border-bottom-color: #0b5ed7; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <div>
+        <h1 class="h2"><span class="material-icons-round align-middle me-2 text-secondary" style="font-size: 1.8rem;">visibility</span>{{ title }}</h1>
+        <p class="text-muted mb-0">Live preview of how the registration form renders from the database configuration.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="{% url 'form_builder_preview' %}?mode=desktop" class="btn btn-sm {% if view_mode == 'desktop' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Desktop</a>
+        <a href="{% url 'form_builder_preview' %}?mode=mobile" class="btn btn-sm {% if view_mode == 'mobile' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Mobile</a>
+        <a href="{% url 'form_builder' %}" class="btn btn-outline-secondary"><span class="material-icons-round align-middle me-1" style="font-size:1.1rem;">arrow_back</span> Back</a>
+    </div>
+</div>
+
+{% if messages %}
+{% for message in messages %}
+<div class="alert alert-success alert-dismissible fade show" role="alert">{{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="preview-shell {% if view_mode == 'mobile' %}mx-auto{% endif %}" {% if view_mode == 'mobile' %}style="max-width: 480px;"{% endif %}>
+    <div class="preview-bar">
+        <span class="fw-bold small"><span class="material-icons-round align-middle me-1" style="font-size:1.1rem;">smartphone</span> Student Registration Form</span>
+        <span class="badge bg-light text-dark">Preview</span>
+    </div>
+    <div class="preview-frame">
+        <form id="previewForm" onsubmit="event.preventDefault(); return false;">
+            {% for group in fb_sections %}
+            <div class="section-card" id="preview-{{ group.section.slug }}">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="material-icons-round text-secondary">{{ group.section.icon }}</span>
+                    <span class="section-title">{{ group.section.name }}</span>
+                    {% if group.section.description %}<span class="text-muted small ms-1">— {{ group.section.description }}</span>{% endif %}
+                </div>
+                <div class="row g-3">
+                    {% for field in group.fields %}
+                    {% if field.visible %}
+                    <div class="field-wrap {% if field.field_type in 'textarea,file' %}col-12{% else %}col-md-6{% endif %}" data-field="{{ field.field_name }}">
+                        <label for="preview-{{ field.field_name }}" class="form-label">
+                            {{ field.label }}{% if field.required %}<span class="req">*</span>{% endif %}
+                        </label>
+                        {% if field.field_type == 'textarea' %}
+                        <textarea id="preview-{{ field.field_name }}" class="form-control" rows="3" placeholder="{{ field.placeholder }}" {% if field.readonly %}readonly{% endif %} {% if field.required %}required{% endif %}>{{ field.default_value }}</textarea>
+                        {% elif field.field_type == 'select' %}
+                        <select id="preview-{{ field.field_name }}" class="form-select" {% if field.readonly %}disabled{% endif %} {% if field.required %}required{% endif %}>
+                            <option value="">-- Select {{ field.label }} --</option>
+                            {% for opt in field.preview_options %}
+                            <option value="{{ opt.value }}">{{ opt.label }}</option>
+                            {% endfor %}
+                        </select>
+                        {% elif field.field_type == 'radio' %}
+                        <div>
+                            {% for opt in field.preview_options %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="{{ field.field_name }}" id="preview-{{ field.field_name }}-{{ forloop.counter }}" value="{{ opt.value }}" {% if field.required %}required{% endif %} {% if field.default_value == opt.value %}checked{% endif %}>
+                                <label class="form-check-label" for="preview-{{ field.field_name }}-{{ forloop.counter }}">{{ opt.label }}</label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% elif field.field_type == 'checkbox' %}
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="preview-{{ field.field_name }}" name="{{ field.field_name }}" {% if field.default_value %}checked{% endif %}>
+                            <label class="form-check-label" for="preview-{{ field.field_name }}">{{ field.help_text|default:'Enable' }}</label>
+                        </div>
+                        {% elif field.field_type == 'file' %}
+                        <input type="file" class="form-control" id="preview-{{ field.field_name }}" name="{{ field.field_name }}" {% if field.readonly %}disabled{% endif %} {% if field.required %}required{% endif %}>
+                        <div class="form-text">
+                            {% if field.allowed_file_types %}Allowed: {{ field.allowed_file_types|join:', ' }}{% endif %}{% if field.max_file_size %} · Max {{ field.max_file_size }} KB{% endif %}
+                        </div>
+                        {% else %}
+                        <input type="{% if field.field_type == 'email' %}email{% elif field.field_type == 'number' %}number{% elif field.field_type == 'date' %}date{% elif field.field_type == 'phone' or field.field_type == 'aadhaar' or field.field_type == 'pincode' %}text{% else %}text{% endif %}"
+                               class="form-control" id="preview-{{ field.field_name }}" name="{{ field.field_name }}"
+                               value="{{ field.default_value }}" placeholder="{{ field.placeholder }}"
+                               {% if field.readonly %}readonly{% endif %} {% if field.required %}required{% endif %}
+                               {% if field.min_length %}minlength="{{ field.min_length }}"{% endif %}
+                               {% if field.max_length %}maxlength="{{ field.max_length }}"{% endif %}>
+                        {% endif %}
+                        {% if field.field_name == 'percentage' %}
+                        <div class="cgpa-helper">
+                            <span>Need to convert CGPA to Percentage?</span>
+                            <a href="https://www.calculatorway.com/cgpa-to-percentage-calculator/" target="_blank" rel="noopener noreferrer" class="cgpa-calc-link">CGPA to Percentage Calculator <span aria-hidden="true">&#x2197;</span></a>
+                        </div>
+                        {% endif %}
+                        {% if field.help_text %}<div class="help">{{ field.help_text }}</div>{% endif %}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </form>
+    </div>
+    <div class="preview-actions">
+        <button class="btn btn-primary" type="button" onclick="alert('This is a preview. The live form validates on submission.')">Submit</button>
+    </div>
+</div>
+{% endblock %}

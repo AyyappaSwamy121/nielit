@@ -1,0 +1,156 @@
+/* Global Responsive Overhaul for NIELIT Django App */
+
+/* 1. Global Box Sizing & Input Control */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+input, select, textarea, button {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+/* Ensure wide inputs don't break layout */
+input, select, textarea {
+    width: 100%;
+}
+
+/* 2. Responsive Container */
+.page-container {
+    width: min(100% - 32px, 1400px);
+    margin-inline: auto;
+}
+
+@media (max-width: 480px) {
+    .page-container {
+        width: min(100% - 20px, 1400px);
+    }
+}
+
+/* 3. Fluid Typography */
+h1 {
+    font-size: clamp(1.6rem, 3vw, 2.5rem) !important;
+}
+h2 {
+    font-size: clamp(1.4rem, 2.5vw, 2rem) !important;
+}
+
+/* 4. Text Wrapping & Long Data Handling */
+.text-wrap, td, .form-help, .select2-selection__rendered {
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+}
+
+/* Fix dropdown options from getting cut on small screens */
+select option {
+    white-space: normal;
+}
+
+/* 5. Image Scaling (Do not force 100% height to prevent distortion) */
+img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* 6. Form Grid (Desktop vs Mobile) */
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+}
+
+/* 7. Table Responsiveness */
+.table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Remove absolute/fixed positioning that might break mobile */
+@media (max-width: 768px) {
+    .card {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        left: auto !important;
+    }
+}
+
+/* 8. Touch Support */
+button, select, .form-control {
+    min-height: 44px;
+}
+
+/* 9. Preview Grid for Fields */
+.preview-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 15px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+@media (max-width: 768px) {
+    .preview-grid {
+        grid-template-columns: 1fr;
+        gap: 5px;
+    }
+    .preview-grid strong {
+        color: #555;
+    }
+}
+
+/* 10. Dashboard Cards */
+.dashboard-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.dashboard-card {
+    flex: 1;
+    min-width: 200px;
+}
+
+@media (max-width: 576px) {
+    .dashboard-card {
+        flex: 100%;
+    }
+}
+
+/* 11. Django Admin Table Responsiveness */
+#changelist-form {
+    overflow-x: auto;
+    width: 100%;
+    -webkit-overflow-scrolling: touch;
+}
+
+#changelist table {
+    width: 100%;
+}
+
+/* Ensure admin filters don't destroy layout on mobile */
+@media (max-width: 768px) {
+    #changelist-filter {
+        position: static !important;
+        width: 100% !important;
+        margin: 15px 0 !important;
+    }
+}
+
+/* Responsive Tabular Inlines in Django Admin */
+.inline-group .tabular table, 
+#uploadeddocument_set-group .tabular table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+

@@ -1,0 +1,15 @@
+{
+    "name": "Council for Skills and Competencies",
+    "short_name": "CSC",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#0d6efd",
+    "icons": [
+        {
+            "src": "images/CSC LOGO.png",
+            "sizes": "180x180",
+            "type": "image/png"
+        }
+    ]
+}

@@ -1,0 +1,576 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} | Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Selection column is intentionally narrow */
+    .sel-col { width: 40px; text-align: center; }
+    .sel-col input { cursor: pointer; }
+
+    /* Subtle highlight for selected rows */
+    tr.row-selected td { background-color: rgba(13, 110, 253, 0.08) !important; }
+
+    /* Sticky bulk-action toolbar below the top navbar */
+    .bulk-toolbar {
+        position: sticky;
+        top: 66px;
+        z-index: 1020;
+        background-color: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.05);
+    }
+    @media (max-width: 767.98px) {
+        .bulk-toolbar { top: 60px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Student Applications</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'export_csv' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-download"></i> Export CSV
+        </a>
+    </div>
+</div>
+
+<!-- Search and Filter Form -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" action="{% url 'application_list' %}">
+            <div class="row g-3">
+                <!-- Row 1 -->
+                <div class="col-md-3">
+                    <label for="search" class="form-label">Search</label>
+                    <input type="text" class="form-control" id="search" name="search" value="{{ current_search }}" placeholder="Search App No, Name, Aadhaar, Mobile...">
+                </div>
+                <div class="col-md-3">
+                    <label for="state" class="form-label">State</label>
+                    <select id="state" name="state" class="form-select">
+                        <option value="">All States</option>
+                        {% for state in states %}
+                        <option value="{{ state.id }}" {% if current_state == state.id|stringformat:"s" %}selected{% endif %}>{{ state.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="district" class="form-label">District</label>
+                    <select id="district" name="district" class="form-select">
+                        <option value="">All Districts</option>
+                        {% for d in districts %}
+                        <option value="{{ d.id }}" data-state="{{ d.state_id }}" {% if current_district == d.id|stringformat:"s" %}selected{% endif %}>{{ d.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="program" class="form-label">Program</label>
+                    <select id="program" name="program" class="form-select">
+                        <option value="">All Programs</option>
+                        {% for prog in programs %}
+                        <option value="{{ prog.id }}" {% if current_program == prog.id|stringformat:"s" %}selected{% endif %}>{{ prog.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Row 2 -->
+                <div class="col-md-3">
+                    <label for="applying_qualification" class="form-label">Applying Qualification</label>
+                    <select id="applying_qualification" name="applying_qualification" class="form-select">
+                        <option value="">All Qualifications</option>
+                        {% for value, label in applying_qualifications %}
+                        <option value="{{ value }}" {% if current_applying_qualification == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="training_partner" class="form-label">Training Partner / ATC</label>
+                    <select id="training_partner" name="training_partner" class="form-select">
+                        <option value="">All Training Partners</option>
+                        {% for tp in training_partners %}
+                        <option value="{{ tp.id }}" {% if current_training_partner == tp.id|stringformat:"s" %}selected{% endif %}>{{ tp.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="status" class="form-label">Application Status</label>
+                    <select id="status" name="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        {% for status in statuses %}
+                        <option value="{{ status.value }}" {% if current_status == status.value %}selected{% endif %}>{{ status.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="gender" class="form-label">Gender</label>
+                    <select id="gender" name="gender" class="form-select">
+                        <option value="">All Genders</option>
+                        {% for value, label in genders %}
+                        <option value="{{ value }}" {% if current_gender == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Row 3 -->
+                <div class="col-md-3">
+                    <label for="category" class="form-label">Category</label>
+                    <select id="category" name="category" class="form-select">
+                        <option value="">All Categories</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if current_category == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.short_name|default:cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="occupation" class="form-label">Occupation</label>
+                    <select id="occupation" name="occupation" class="form-select">
+                        <option value="">All Occupations</option>
+                        {% for occ in occupations %}
+                        <option value="{{ occ.id }}" {% if current_occupation == occ.id|stringformat:"s" %}selected{% endif %}>{{ occ.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="year_of_passing" class="form-label">Year of Passing</label>
+                    <select id="year_of_passing" name="year_of_passing" class="form-select">
+                        <option value="">All Years</option>
+                        {% for y in years %}
+                        <option value="{{ y }}" {% if current_year == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="date_range" class="form-label">Submission Date</label>
+                    <div class="d-flex gap-2">
+                        <select id="date_range" name="date_range" class="form-select">
+                            <option value="">All Dates</option>
+                            <option value="today" {% if current_date_range == 'today' %}selected{% endif %}>Today</option>
+                            <option value="yesterday" {% if current_date_range == 'yesterday' %}selected{% endif %}>Yesterday</option>
+                            <option value="last7" {% if current_date_range == 'last7' %}selected{% endif %}>Last 7 Days</option>
+                            <option value="last30" {% if current_date_range == 'last30' %}selected{% endif %}>Last 30 Days</option>
+                            <option value="this_month" {% if current_date_range == 'this_month' %}selected{% endif %}>This Month</option>
+                            <option value="custom" {% if current_date_range == 'custom' %}selected{% endif %}>Custom Range</option>
+                        </select>
+                    </div>
+                    <div id="customDateRange" class="d-flex gap-2 mt-2 {% if current_date_range != 'custom' %}d-none{% endif %}">
+                        <input type="date" class="form-control form-control-sm" id="date_from" name="date_from" value="{{ current_date_from }}">
+                        <span class="align-self-center text-muted">to</span>
+                        <input type="date" class="form-control form-control-sm" id="date_to" name="date_to" value="{{ current_date_to }}">
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="col-12 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-funnel me-1"></i>Filter</button>
+                    <a href="{% url 'application_list' %}" class="btn btn-outline-secondary"><i class="bi bi-x-circle me-1"></i>Clear Filters</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Active Filter Summary -->
+{% if current_search or current_state or current_district or current_program or current_applying_qualification or current_qualification or current_training_partner or current_status or current_gender or current_category or current_occupation or current_year or current_date_range or current_date_from or current_date_to or current_quality %}
+<div class="card border-primary-subtle bg-primary-subtle bg-opacity-10 mb-3">
+    <div class="card-body py-2 d-flex flex-wrap align-items-center gap-2">
+        <span class="fw-bold"><i class="bi bi-funnel-fill me-1"></i>Active Filters:</span>
+        {% if current_search %}<span class="badge bg-primary">Search: {{ current_search }}</span>{% endif %}
+        {% if current_state_name %}<span class="badge bg-primary">State: {{ current_state_name }}</span>{% endif %}
+        {% if current_district_name %}<span class="badge bg-primary">District: {{ current_district_name }}</span>{% endif %}
+        {% if current_program_name %}<span class="badge bg-primary">Program: {{ current_program_name }}</span>{% endif %}
+        {% if current_applying_qualification %}<span class="badge bg-primary">Qualification: {{ current_applying_qualification }}</span>{% endif %}
+        {% if current_qualification_name %}<span class="badge bg-primary">Qualification: {{ current_qualification_name }}</span>{% endif %}
+        {% if current_training_partner_name %}<span class="badge bg-primary">Training Partner: {{ current_training_partner_name }}</span>{% endif %}
+        {% if current_status == 'draft' %}<span class="badge bg-primary">Status: Draft</span>{% elif current_status == 'submitted' %}<span class="badge bg-primary">Status: Submitted</span>{% endif %}
+        {% if current_gender %}<span class="badge bg-primary">Gender: {{ current_gender }}</span>{% endif %}
+        {% if current_category_name %}<span class="badge bg-primary">Category: {{ current_category_name }}</span>{% endif %}
+        {% if current_occupation_name %}<span class="badge bg-primary">Occupation: {{ current_occupation_name }}</span>{% endif %}
+        {% if current_year %}<span class="badge bg-primary">Year: {{ current_year }}</span>{% endif %}
+        {% if current_date_range %}<span class="badge bg-primary">Date: {{ current_date_range|title }}</span>{% endif %}
+        {% if current_date_from or current_date_to %}<span class="badge bg-primary">Range: {{ current_date_from|default:"..." }} → {{ current_date_to|default:"..." }}</span>{% endif %}
+        {% if current_quality_label %}<span class="badge bg-danger">Data Quality: {{ current_quality_label }}</span>{% endif %}
+        <a href="{% url 'application_list' %}" class="btn btn-sm btn-outline-danger ms-auto"><i class="bi bi-x-lg me-1"></i>Clear All</a>
+    </div>
+</div>
+{% endif %}
+
+<!-- Bulk Selection Toolbar (hidden until rows are selected) -->
+{% csrf_token %}
+<div id="bulkToolbar" class="bulk-toolbar d-none p-2 px-3 mb-3">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <span class="fw-bold" id="selectionCount">0 applications selected</span>
+        <div class="ms-auto d-flex flex-wrap align-items-center gap-2">
+            <button type="button" id="clearSelectionBtn" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-x-lg me-1"></i>Clear Selection
+            </button>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-primary dropdown-toggle" type="button" id="bulkActionsDropdown" data-bs-toggle="dropdown" aria-expanded="false" disabled>
+                    <i class="bi bi-list-check me-1"></i>Bulk Actions
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="bulkActionsDropdown">
+                    <li><h6 class="dropdown-header">Export Selected</h6></li>
+                    <li><a class="dropdown-item bulk-action" href="#" data-action="export" data-format="csv"><i class="bi bi-filetype-csv me-2"></i>Export as CSV</a></li>
+                    <li><a class="dropdown-item bulk-action" href="#" data-action="export" data-format="excel"><i class="bi bi-file-earmark-excel me-2"></i>Export as Excel</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item bulk-action" href="#" data-action="download-docs"><i class="bi bi-file-earmark-zip me-2"></i>Download Selected Documents</a></li>
+                    <li><a class="dropdown-item bulk-action" href="#" data-action="mark-correction"><i class="bi bi-pencil-square me-2"></i>Mark for Correction</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Action Result Message -->
+<div id="bulkMessage" class="d-none"></div>
+
+<!-- Result Count -->
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <span class="text-muted small">
+        <i class="bi bi-info-circle me-1"></i>
+        {% if total_count == 1 %}Showing 1 application{% else %}Showing {{ total_count }} applications{% endif %}
+    </span>
+</div>
+
+<!-- Data Table -->
+<div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th scope="col" class="sel-col">
+                    <input class="form-check-input" type="checkbox" id="selectAllCheckbox" title="Select all applications on this page">
+                </th>
+                <th scope="col">App No</th>
+                <th scope="col">Full Name</th>
+                <th scope="col">Mobile</th>
+                <th scope="col">Email</th>
+                <th scope="col">Aadhaar</th>
+                <th scope="col">Program</th>
+                <th scope="col">Institution</th>
+                <th scope="col">Submission Date</th>
+                <th scope="col">App Status</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for app in page_obj %}
+            <tr data-id="{{ app.id }}">
+                <td class="sel-col">
+                    <input class="form-check-input application-checkbox" type="checkbox" value="{{ app.id }}">
+                </td>
+                <td><strong>{{ app.application_number|default:"—" }}</strong></td>
+                <td>{{ app.full_name|default:"—" }}</td>
+                <td>{{ app.mobile_number|default:"—" }}</td>
+                <td>{{ app.email|default:"—" }}</td>
+                <td>
+                    {{ app.aadhaar_number|default:"—" }}
+                </td>
+                <td>{{ app.program_opting.name|default:"—" }}</td>
+                <td>{{ app.institution|default:"—" }}</td>
+                <td>{% if app.submission_date %}{{ app.submission_date|date:"M d, Y" }}{% else %}—{% endif %}</td>
+                <td>
+                    {% if app.is_draft %}
+                        <span class="badge bg-info text-dark">Draft</span>
+                    {% else %}
+                        <span class="badge bg-success">Submitted</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="actionsMenu{{ app.id }}" data-bs-toggle="dropdown" aria-expanded="false">
+                            Actions
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="actionsMenu{{ app.id }}">
+                            <li><a class="dropdown-item" href="{% url 'admin:registrations_studentapplication_change' app.id %}"><i class="bi bi-eye"></i> View/Verify</a></li>
+                            <li><a class="dropdown-item" href="{% url 'admin:registrations_studentapplication_change' app.id %}"><i class="bi bi-pencil"></i> Edit</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            {% if app.acknowledgement_pdf %}
+                            <li><a class="dropdown-item" href="{{ app.acknowledgement_pdf.url }}" target="_blank"><i class="bi bi-file-pdf"></i> Download PDF</a></li>
+                            {% endif %}
+                            <li><a class="dropdown-item text-danger" href="{% url 'admin:registrations_studentapplication_delete' app.id %}"><i class="bi bi-trash"></i> Delete</a></li>
+                        </ul>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="11" class="text-center py-5 text-muted">
+                    <i class="bi bi-inbox fs-1 d-block mb-3"></i>
+                    {% if current_status == 'submitted' %}
+                    <h5 class="fw-bold text-dark">No submitted applications found.</h5>
+                    {% elif current_status == 'draft' %}
+                    <h5 class="fw-bold text-dark">No draft applications found.</h5>
+                    {% else %}
+                    <h5 class="fw-bold text-dark">No applications found</h5>
+                    {% endif %}
+                    <p class="mb-3">Try changing your search or filter criteria.</p>
+                    <a href="{% url 'application_list' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x-circle me-1"></i>Clear Filters</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav aria-label="Page navigation" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1{% if query_string %}&{{ query_string }}{% endif %}">&laquo; First</a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}">Previous</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">&laquo; First</span></li>
+        <li class="page-item disabled"><span class="page-link">Previous</span></li>
+        {% endif %}
+        
+        <li class="page-item active"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+        
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}">Next</a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if query_string %}&{{ query_string }}{% endif %}">Last &raquo;</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Next</span></li>
+        <li class="page-item disabled"><span class="page-link">Last &raquo;</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+    'use strict';
+
+    var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    csrfToken = csrfToken ? csrfToken.value : '';
+
+    // ---- State → District linkage ----
+    var stateSelect = document.getElementById('state');
+    var districtSelect = document.getElementById('district');
+
+    function filterDistricts() {
+        var selectedState = stateSelect.value;
+        var options = districtSelect.querySelectorAll('option');
+        options.forEach(function (opt) {
+            if (!opt.value || !selectedState) {
+                opt.style.display = '';
+            } else {
+                opt.style.display = opt.getAttribute('data-state') === selectedState ? '' : 'none';
+            }
+        });
+    }
+
+    if (stateSelect && districtSelect) {
+        stateSelect.addEventListener('change', function () {
+            districtSelect.value = '';
+            filterDistricts();
+        });
+        filterDistricts();
+    }
+
+    // ---- Custom date range toggle ----
+    var dateRangeSelect = document.getElementById('date_range');
+    var customDateRange = document.getElementById('customDateRange');
+    function toggleCustomDateRange() {
+        if (!customDateRange || !dateRangeSelect) return;
+        if (dateRangeSelect.value === 'custom') {
+            customDateRange.classList.remove('d-none');
+        } else {
+            customDateRange.classList.add('d-none');
+        }
+    }
+    if (dateRangeSelect) {
+        dateRangeSelect.addEventListener('change', toggleCustomDateRange);
+        toggleCustomDateRange();
+    }
+
+    function getSelectedIds() {
+        var ids = [];
+        document.querySelectorAll('.application-checkbox').forEach(function (cb) {
+            if (cb.checked) ids.push(cb.value);
+        });
+        return ids;
+    }
+
+    function updateUI() {
+        var cbs = document.querySelectorAll('.application-checkbox');
+        var selected = getSelectedIds();
+        var count = selected.length;
+        var total = cbs.length;
+        var toolbar = document.getElementById('bulkToolbar');
+        var msg = document.getElementById('bulkMessage');
+        var selectAll = document.getElementById('selectAllCheckbox');
+        var counter = document.getElementById('selectionCount');
+        var bulkBtn = document.getElementById('bulkActionsDropdown');
+
+        // Row highlight
+        cbs.forEach(function (cb) {
+            var row = cb.closest('tr');
+            if (row) row.classList.toggle('row-selected', cb.checked);
+        });
+
+        // Master checkbox states
+        if (selectAll) {
+            selectAll.checked = count > 0 && count === total;
+            selectAll.indeterminate = count > 0 && count < total;
+        }
+
+        // Counter & toolbar
+        if (counter) {
+            counter.textContent = count + ' application' + (count === 1 ? '' : 's') + ' selected';
+        }
+        if (toolbar) toolbar.classList.toggle('d-none', count === 0);
+        if (bulkBtn) bulkBtn.disabled = count === 0;
+        if (msg) msg.classList.add('d-none');
+    }
+
+    function showMessage(type, text) {
+        var msg = document.getElementById('bulkMessage');
+        if (!msg) return;
+        var classes = {
+            success: 'alert alert-success alert-dismissible fade show',
+            error: 'alert alert-danger alert-dismissible fade show',
+            warning: 'alert alert-warning alert-dismissible fade show'
+        };
+        msg.className = classes[type] || classes.success;
+        msg.innerHTML = '<i class="bi bi-' + (type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'exclamation-circle') + ' me-2"></i>'
+            + text
+            + '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+        msg.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+
+    function postForm(url, ids) {
+        var body = new URLSearchParams();
+        ids.forEach(function (id) { body.append('selected_ids[]', id); });
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken,
+                'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+            },
+            body: body.toString(),
+            credentials: 'same-origin'
+        });
+    }
+
+    // Individual + Select All
+    document.querySelectorAll('.application-checkbox').forEach(function (cb) {
+        cb.addEventListener('change', updateUI);
+    });
+    var selectAll = document.getElementById('selectAllCheckbox');
+    if (selectAll) {
+        selectAll.addEventListener('change', function () {
+            var checked = selectAll.checked;
+            document.querySelectorAll('.application-checkbox').forEach(function (cb) { cb.checked = checked; });
+            updateUI();
+        });
+    }
+
+    // Clear selection
+    document.getElementById('clearSelectionBtn').addEventListener('click', function () {
+        document.querySelectorAll('.application-checkbox').forEach(function (cb) { cb.checked = false; });
+        var selectAll = document.getElementById('selectAllCheckbox');
+        if (selectAll) { selectAll.checked = false; selectAll.indeterminate = false; }
+        updateUI();
+    });
+
+    // Bulk actions
+    document.querySelectorAll('.bulk-action').forEach(function (link) {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            var ids = getSelectedIds();
+            var action = link.getAttribute('data-action');
+            var format = link.getAttribute('data-format') || 'csv';
+
+            if (ids.length === 0) {
+                showMessage('error', 'Please select at least one application.');
+                return;
+            }
+
+            if (action === 'export') {
+                postForm('{% url "bulk_export" %}', ids).then(function (resp) {
+                    if (!resp.ok) {
+                        return resp.text().then(function (t) { showMessage('error', 'Export failed: ' + (t || 'server error')); });
+                    }
+                    var disposition = resp.headers.get('Content-Disposition') || '';
+                    var match = /filename="?([^"]+)"?/.exec(disposition);
+                    var filename = match ? match[1] : (format === 'excel' ? 'selected_applications.xlsx' : 'selected_applications.csv');
+                    return resp.blob().then(function (blob) {
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        showMessage('success', ids.length + ' application' + (ids.length === 1 ? '' : 's') + ' exported successfully.');
+                    });
+                });
+            }
+
+            if (action === 'download-docs') {
+                postForm('{% url "bulk_download_documents" %}', ids).then(function (resp) {
+                    if (!resp.ok) {
+                        return resp.text().then(function (t) { showMessage('error', 'Download failed: ' + (t || 'server error')); });
+                    }
+                    var disposition = resp.headers.get('Content-Disposition') || '';
+                    var match = /filename="?([^"]+)"?/.exec(disposition);
+                    var filename = match ? match[1] : 'selected_applications_documents.zip';
+                    return resp.blob().then(function (blob) {
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement('a');
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        showMessage('success', 'Documents for ' + ids.length + ' application' + (ids.length === 1 ? '' : 's') + ' downloaded successfully.');
+                    });
+                });
+            }
+
+            if (action === 'mark-correction') {
+                postForm('{% url "bulk_correction" %}', ids).then(function (resp) {
+                    return resp.json().then(function (data) { return { ok: resp.ok, data: data }; });
+                }).then(function (result) {
+                    if (!result.ok) {
+                        showMessage('error', result.data.error || 'Operation failed.');
+                        return;
+                    }
+                    var processed = result.data.processed;
+                    var skipped = result.data.skipped || 0;
+                    var msg = processed + ' application' + (processed === 1 ? '' : 's') + ' marked for correction.';
+                    if (skipped > 0) {
+                        msg += ' ' + skipped + ' draft' + (skipped === 1 ? '' : 's') + ' skipped.';
+                    }
+                    showMessage('success', msg);
+                    document.querySelectorAll('.application-checkbox').forEach(function (cb) { cb.checked = false; });
+                    if (selectAll) { selectAll.checked = false; selectAll.indeterminate = false; }
+                    updateUI();
+                    setTimeout(function () { location.reload(); }, 900);
+                });
+            }
+        });
+    });
+
+    // Ensure selection is preserved logically when filters change: checkboxes
+    // only ever reflect currently displayed rows (current-page selection only).
+    updateUI();
+})();
+</script>
+{% endblock %}

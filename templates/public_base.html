@@ -1,0 +1,113 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <title>
+    {% block title %}
+    {{ platform_settings.organization_name|default:'Council for Skills and Competencies' }} (CSC) | Skill Development & Training
+    {% endblock %}
+    </title>
+    
+    <meta name="description"
+          content="{% block meta_description %}
+{{ platform_settings.portal_description|default:'Council for Skills and Competencies (CSC) provides skill development, technical training and career-focused programs designed to build practical and industry-ready competencies.' }}
+{% endblock %}">
+    
+    <meta name="keywords"
+          content="{% block meta_keywords %}Council for Skills and Competencies, CSC, skill development, skill training programs, technical training, student registration, professional skills training, career development, industry-ready skills, and training program registration{% endblock %}">
+
+    <meta name="robots"
+          content="{% block robots %}index,follow,max-image-preview:large{% endblock %}">
+
+    {% block canonical %}
+    {% if request.build_absolute_uri %}
+    <link rel="canonical" href="{{ request.build_absolute_uri }}">
+    {% endif %}
+    {% endblock %}
+
+    <meta name="author" content="{{ platform_settings.organization_name|default:'Council for Skills and Competencies' }}">
+    <meta name="application-name" content="{{ platform_settings.organization_name|default:'Council for Skills and Competencies' }}">
+    <meta name="theme-color" content="#0d6efd">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="{{ platform_settings.organization_name|default:'Council for Skills and Competencies' }}">
+    <meta property="og:title"
+          content="{% block og_title %}{{ platform_settings.organization_name|default:'Council for Skills and Competencies' }} (CSC) | Skill Development & Training{% endblock %}">
+    <meta property="og:description"
+          content="{% block og_description %}{{ platform_settings.portal_description|default:'Council for Skills and Competencies (CSC) provides skill development, technical training and career-focused programs designed to build practical and industry-ready competencies.' }}{% endblock %}">
+    
+    {% block og_url %}
+    {% if request.build_absolute_uri %}
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    {% endif %}
+    {% endblock %}
+    
+    <meta property="og:image" content="{% block og_image %}{% if platform_settings.logo %}{{ request.scheme }}://{{ request.get_host }}{{ platform_settings.logo.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'images/logo/csc-logo.jpeg' %}{% endif %}{% endblock %}">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title"
+          content="{% block twitter_title %}{{ platform_settings.organization_name|default:'Council for Skills and Competencies' }} (CSC) | Skill Development & Training{% endblock %}">
+    <meta name="twitter:description"
+          content="{% block twitter_description %}{{ platform_settings.portal_description|default:'Council for Skills and Competencies (CSC) provides skill development, technical training and career-focused programs designed to build practical and industry-ready competencies.' }}{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{% if platform_settings.logo %}{{ request.scheme }}://{{ request.get_host }}{{ platform_settings.logo.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'images/logo/csc-logo.jpeg' %}{% endif %}{% endblock %}">
+
+    <!-- JSON-LD -->
+    {% block structured_data %}
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Organization",
+      "name": "{{ platform_settings.organization_name|default:'Council for Skills and Competencies' }}",
+      "url": "{{ request.scheme }}://{{ request.get_host }}/",
+      "logo": "{% if platform_settings.logo %}{{ request.scheme }}://{{ request.get_host }}{{ platform_settings.logo.url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'images/logo/csc-logo.jpeg' %}{% endif %}"
+    }
+    </script>
+    {% endblock %}
+
+{% if platform_settings.favicon %}
+<link rel="icon" type="image/x-icon" href="{{ platform_settings.favicon.url }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ platform_settings.favicon.url }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ platform_settings.favicon.url }}">
+{% else %}
+<link rel="icon" type="image/x-icon" href="{% static 'images/CSC LOGO.png' %}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/CSC LOGO.png' %}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{% static 'images/CSC LOGO.png' %}">
+{% endif %}
+    <link rel="manifest" href="{% static 'site.webmanifest' %}">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    
+    <!-- Tom Select CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    
+    <link rel="stylesheet" href="{% static 'css/responsive.css' %}">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-light">
+
+    {% include 'navbar.html' %}
+
+    {% block content %}{% endblock %}
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Tom Select JS -->
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

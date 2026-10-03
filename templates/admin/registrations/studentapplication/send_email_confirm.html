@@ -1,0 +1,22 @@
+{% extends "admin/base_site.html" %}
+{% block title %}{{ title }} | CSC Admin{% endblock %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+<p class="help">Email will go to <strong>{{ recipients.count }}</strong> selected student(s) with an address{% if no_email_count %}; {{ no_email_count }} selected have no email and will be skipped{% endif %}.</p>
+
+<form method="post" action="">
+    {% csrf_token %}
+    {% for name, value in hidden_fields %}
+        <input type="hidden" name="{{ name }}" value="{{ value }}">
+    {% endfor %}
+
+    <p><strong>Subject:</strong> {{ subject }}</p>
+    <pre style="white-space:pre-wrap; border:1px solid #ddd; padding:10px; background:#f6f6f6;">{{ body }}</pre>
+
+    <div style="margin-top:16px;">
+        <input type="submit" value="Send email" class="default" style="margin-right:8px;">
+        <a href="{% url 'admin:registrations_studentapplication_changelist' %}" class="button">Cancel</a>
+    </div>
+</form>
+{% endblock %}

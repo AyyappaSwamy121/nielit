@@ -1,0 +1,125 @@
+<div class="position-sticky pt-3 pb-5 sidebar-sticky overflow-auto vh-100" style="padding-bottom: 100px !important;">
+    
+    <div class="px-3 mb-3 text-muted small fw-bold text-uppercase">Main Menu</div>
+    <ul class="nav flex-column mb-4">
+        <li class="nav-item mb-1">
+            <a class="nav-link active rounded-3 d-flex align-items-center fw-bold" href="{% url 'dashboard_home' %}">
+                <span class="material-icons-round me-3 text-primary">dashboard</span> Overview
+            </a>
+        </li>
+    </ul>
+
+    <div class="px-3 mb-2 text-muted small fw-bold text-uppercase">Core Workflows</div>
+    <ul class="nav flex-column mb-4">
+        <!-- Applications -->
+        <li class="nav-item mb-1">
+            <a class="nav-link rounded-3 d-flex align-items-center justify-content-between text-dark" data-bs-toggle="collapse" href="#applicationsCollapse" role="button" aria-expanded="false" aria-controls="applicationsCollapse">
+                <div><span class="material-icons-round me-3 text-secondary align-middle">description</span> Applications</div>
+                <span class="material-icons-round fs-6 text-muted">expand_more</span>
+            </a>
+            <div class="collapse ms-4 ps-2 border-start border-2 mt-1" id="applicationsCollapse">
+                <ul class="nav flex-column">
+                    <li><a class="nav-link py-1 text-muted small" href="{% url 'application_list' %}">All Applications</a></li>
+                    <li><a class="nav-link py-1 text-muted small" href="{% url 'application_list' %}">New (Last 24h)</a></li>
+                    <li><a class="nav-link py-1 text-warning fw-bold small" href="{% url 'application_pending' %}">Pending Review</a></li>
+                    <li><a class="nav-link py-1 text-success small" href="{% url 'application_list' %}">Approved</a></li>
+                    <li><a class="nav-link py-1 text-danger small" href="{% url 'application_list' %}">Rejected</a></li>
+                </ul>
+            </div>
+        </li>
+
+        <!-- Students -->
+        <li class="nav-item mb-1">
+            <a class="nav-link rounded-3 d-flex align-items-center justify-content-between text-dark" data-bs-toggle="collapse" href="#studentsCollapse" role="button" aria-expanded="false" aria-controls="studentsCollapse">
+                <div><span class="material-icons-round me-3 text-secondary align-middle">groups</span> Students</div>
+                <span class="material-icons-round fs-6 text-muted">expand_more</span>
+            </a>
+            <div class="collapse ms-4 ps-2 border-start border-2 mt-1" id="studentsCollapse">
+                <ul class="nav flex-column">
+                    <li><a class="nav-link py-1 text-muted small" href="{% url 'student_directory' %}">Student Directory</a></li>
+                    <li><a class="nav-link py-1 text-muted small" href="{% url 'student_directory' %}">Advanced Search</a></li>
+                    <li><a class="nav-link py-1 text-muted small" href="{% url 'student_directory' %}">Bulk Operations</a></li>
+                </ul>
+            </div>
+        </li>
+
+        <!-- Document Verification -->
+        <li class="nav-item mb-1">
+            <a class="nav-link rounded-3 d-flex align-items-center justify-content-between text-dark" data-bs-toggle="collapse" href="#docsCollapse" role="button" aria-expanded="false" aria-controls="docsCollapse">
+                <div><span class="material-icons-round me-3 text-secondary align-middle">verified</span> Verification Desk</div>
+                <span class="material-icons-round fs-6 text-muted">expand_more</span>
+            </a>
+            <div class="collapse ms-4 ps-2 border-start border-2 mt-1" id="docsCollapse">
+                <ul class="nav flex-column">
+                    <li><a class="nav-link py-1 text-muted small" href="{% url 'verification_desk' %}">Aadhaar Queue</a></li>
+                    <li><a class="nav-link py-1 text-muted small" href="{% url 'verification_desk' %}">Community Certs</a></li>
+                    <li><a class="nav-link py-1 text-muted small" href="{% url 'verification_desk' %}">Biometrics (Photo/Thumb)</a></li>
+                    <li><a class="nav-link py-1 text-muted small" href="{% url 'verification_desk' %}">ABC ID Proofs</a></li>
+                </ul>
+            </div>
+        </li>
+    </ul>
+
+    <div class="px-3 mb-2 text-muted small fw-bold text-uppercase">Analytics & Data</div>
+    <ul class="nav flex-column mb-4">
+        <!-- Reports -->
+        <li class="nav-item mb-1">
+            <a class="nav-link rounded-3 d-flex align-items-center justify-content-between text-dark" data-bs-toggle="collapse" href="#reportsCollapse" role="button" aria-expanded="false">
+                <div><span class="material-icons-round me-3 text-secondary align-middle">insights</span> Custom Reports</div>
+                <span class="material-icons-round fs-6 text-muted">expand_more</span>
+            </a>
+            <div class="collapse ms-4 ps-2 border-start border-2 mt-1" id="reportsCollapse">
+                <ul class="nav flex-column">
+                    <li><a class="nav-link py-1 text-muted small" href="{% url 'reports_dashboard' %}">Daily Summaries</a></li>
+                    <li><a class="nav-link py-1 text-muted small" href="{% url 'reports_dashboard' %}">Demographics</a></li>
+                    <li><a class="nav-link py-1 text-muted small" href="{% url 'reports_dashboard' %}">Geographical (State/Dist)</a></li>
+                </ul>
+            </div>
+        </li>
+        <!-- Exports -->
+        <li class="nav-item mb-1">
+            <a class="nav-link rounded-3 d-flex align-items-center text-dark" href="{% url 'export_center' %}">
+                <span class="material-icons-round me-3 text-secondary">file_download</span> Export Center
+            </a>
+        </li>
+        <!-- Master Data -->
+        <li class="nav-item mb-1">
+            <a class="nav-link rounded-3 d-flex align-items-center text-dark" href="{% url 'master_data' %}">
+                <span class="material-icons-round me-3 text-secondary">dataset</span> Master Data
+            </a>
+        </li>
+    </ul>
+
+    <div class="px-3 mb-2 text-muted small fw-bold text-uppercase">System Administration</div>
+    <ul class="nav flex-column mb-5 pb-5">
+        <li class="nav-item mb-1">
+            <a class="nav-link rounded-3 d-flex align-items-center text-dark" href="{% url 'settings_dashboard' %}">
+                <span class="material-icons-round me-3 text-secondary">manage_accounts</span> Staff Roles
+            </a>
+        </li>
+        <li class="nav-item mb-1">
+            <a class="nav-link rounded-3 d-flex align-items-center text-dark" href="{% url 'audit_logs' %}">
+                <span class="material-icons-round me-3 text-secondary">history</span> Audit Logs
+            </a>
+        </li>
+        <li class="nav-item mb-1">
+            <a class="nav-link rounded-3 d-flex align-items-center text-dark" href="{% url 'settings_dashboard' %}">
+                <span class="material-icons-round me-3 text-secondary">settings</span> Platform Settings
+            </a>
+        </li>
+        <li class="nav-item mb-1">
+            <a class="nav-link rounded-3 d-flex align-items-center text-dark" href="{% url 'settings_dashboard' %}">
+                <span class="material-icons-round me-3 text-secondary">backup</span> Backup & Restore
+            </a>
+        </li>
+    </ul>
+    
+    <hr class="mt-5">
+    
+    <div class="px-3 mt-4 mb-4">
+        <a href="/admin/" target="_blank" class="btn btn-outline-danger w-100 rounded-3 d-flex justify-content-center align-items-center fw-bold shadow-sm">
+            <span class="material-icons-round fs-5 me-2">code</span> Classic Admin (Dev)
+        </a>
+    </div>
+    
+</div>

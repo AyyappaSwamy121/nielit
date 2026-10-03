@@ -1,0 +1,29 @@
+{% extends "admin/base_site.html" %}
+{% block title %}Send email to selected students | CSC Admin{% endblock %}
+
+{% block content %}
+<h1>Send email to {{ applications.count }} selected student(s)</h1>
+{% if error %}<p style="color:#ba2121; font-weight:bold;">{{ error }}</p>{% endif %}
+<p class="help">Emails will go only to selected students who have an address on file.</p>
+
+<form method="post" action="">
+    {% csrf_token %}
+    {% for name, value in hidden_fields %}
+        <input type="hidden" name="{{ name }}" value="{{ value }}">
+    {% endfor %}
+
+    <p>
+        <label for="subject"><strong>Subject:</strong></label><br>
+        <input type="text" id="subject" name="subject" value="{{ subject|default:'' }}" style="width:100%; max-width:600px;">
+    </p>
+    <p>
+        <label for="message"><strong>Message:</strong></label><br>
+        <textarea id="message" name="message" rows="8" style="width:100%; max-width:600px;">{{ body|default:'' }}</textarea>
+    </p>
+
+    <div>
+        <input type="submit" value="Send email" class="default" style="margin-right:8px;">
+        <a href="{% url 'admin:registrations_studentapplication_changelist' %}" class="button">Cancel</a>
+    </div>
+</form>
+{% endblock %}

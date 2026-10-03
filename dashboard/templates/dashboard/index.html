@@ -1,0 +1,676 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard | CSC Admin Portal{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+        border-radius: 1rem;
+        border: none;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.04);
+        background: white;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    a.stat-card { text-decoration: none; color: inherit; display: block; }
+    .icon-box {
+        width: 52px; height: 52px; border-radius: 1rem;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .bg-light-primary { background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; }
+    .bg-light-success { background-color: rgba(25, 135, 84, 0.1); color: #198754; }
+    .bg-light-warning { background-color: rgba(255, 193, 7, 0.1); color: #ffc107; }
+    .bg-light-danger  { background-color: rgba(220, 53, 69, 0.1); color: #dc3545; }
+    .bg-light-info    { background-color: rgba(13, 202, 240, 0.1); color: #0dcaf0; }
+    .bg-light-purple  { background-color: rgba(111, 66, 193, 0.1); color: #6f42c1; }
+    .bg-light-orange  { background-color: rgba(253, 126, 20, 0.1); color: #fd7e14; }
+
+    .section-card { border-radius: 1rem; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.04); }
+    .section-title { font-size: 0.8rem; letter-spacing: 0.06em; }
+
+    .dist-row { display: flex; align-items: center; gap: .5rem; padding: .35rem 0; }
+    .dist-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .dist-count { font-weight: 700; color: var(--bs-body-color); }
+    .dist-bar { height: 8px; border-radius: 4px; background: var(--bs-tertiary-bg); overflow: hidden; }
+    .dist-fill { height: 100%; border-radius: 4px; }
+
+    .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .health-pill { font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .04em; }
+
+    .text-purple { color: #6f42c1 !important; }
+    .text-orange { color: #fd7e14 !important; }
+
+    .activity-list { max-height: 420px; overflow-y: auto; }
+    .activity-item { display: flex; gap: .75rem; padding: .6rem 0; border-bottom: 1px dashed var(--bs-border-color); }
+    .activity-item:last-child { border-bottom: none; }
+    .activity-icon { width: 36px; height: 36px; border-radius: .6rem; display: flex; align-items: center; justify-content: center; flex: 0 0 36px; }
+
+    .trend-range-btn { font-size: .78rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <div>
+        <h1 class="h2 fw-bold text-dark mb-0">System Overview</h1>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mt-2 mb-0">
+                <li class="breadcrumb-item"><a href="#">Admin</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="btn-toolbar mb-2 mb-md-0 gap-2 flex-wrap">
+        <a href="{% url 'registration' %}" class="btn btn-sm btn-primary fw-bold d-flex align-items-center">
+            <span class="material-icons-round fs-6 me-1">add</span> New Application
+        </a>
+        <a href="{% url 'export_center' %}" class="btn btn-sm btn-success fw-bold d-flex align-items-center">
+            <span class="material-icons-round fs-6 me-1">cloud_download</span> Export Center
+        </a>
+        <a href="{% url 'master_data' %}" class="btn btn-sm btn-outline-secondary fw-bold d-flex align-items-center">
+            <span class="material-icons-round fs-6 me-1">dataset</span> Master Data
+        </a>
+    </div>
+</div>
+
+<!-- ===================== 1. KPI CARDS ===================== -->
+<div class="row g-3 mb-4">
+    <div class="col-xl-2 col-md-4 col-6">
+        <a href="{% url 'application_list' %}" class="card stat-card p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase fw-bold mb-2">Total Applications</h6>
+                    <h2 class="fw-bold mb-0">{{ metrics.total_apps }}</h2>
+                    <small class="text-success fw-bold"><span class="material-icons-round fs-6 align-middle">trending_up</span> Live data</small>
+                </div>
+                <div class="icon-box bg-light-primary"><span class="material-icons-round fs-2">folder_special</span></div>
+            </div>
+        </a>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <a href="{% url 'application_list' %}?status=submitted" class="card stat-card p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase fw-bold mb-2">Submitted Applications</h6>
+                    <h2 class="fw-bold mb-0">{{ metrics.submitted_apps }}</h2>
+                    <small class="text-success fw-bold"><span class="material-icons-round fs-6 align-middle">check_circle</span> Successfully submitted</small>
+                </div>
+                <div class="icon-box bg-light-success"><span class="material-icons-round fs-2">check_circle</span></div>
+            </div>
+        </a>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <a href="{% url 'application_list' %}?status=draft" class="card stat-card p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase fw-bold mb-2">Draft Applications</h6>
+                    <h2 class="fw-bold mb-0">{{ metrics.draft_apps }}</h2>
+                    <small class="text-info fw-bold"><span class="material-icons-round fs-6 align-middle">edit_note</span> In progress</small>
+                </div>
+                <div class="icon-box bg-light-info"><span class="material-icons-round fs-2">edit_note</span></div>
+            </div>
+        </a>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <a href="{% url 'application_list' %}?date_range=last7" class="card stat-card p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase fw-bold mb-2">This Week</h6>
+                    <h2 class="fw-bold mb-0">{{ metrics.this_week }}</h2>
+                    <small class="text-purple fw-bold"><span class="material-icons-round fs-6 align-middle">date_range</span> Last 7 days</small>
+                </div>
+                <div class="icon-box bg-light-purple"><span class="material-icons-round fs-2">date_range</span></div>
+            </div>
+        </a>
+    </div>
+    <div class="col-xl-2 col-md-4 col-6">
+        <a href="{% url 'application_list' %}?date_range=this_month" class="card stat-card p-3 h-100">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-muted text-uppercase fw-bold mb-2">This Month</h6>
+                    <h2 class="fw-bold mb-0">{{ metrics.this_month }}</h2>
+                    <small class="text-orange fw-bold"><span class="material-icons-round fs-6 align-middle">calendar_month</span> This month</small>
+                </div>
+                <div class="icon-box bg-light-orange"><span class="material-icons-round fs-2">calendar_month</span></div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- ===================== 2. LIFECYCLE + TREND ===================== -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-5">
+        <div class="card section-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><span class="material-icons-round text-primary align-middle me-2">account_tree</span> Application Lifecycle</h5>
+            </div>
+            {% for item in lifecycle %}
+            <div class="mb-3">
+                <div class="d-flex justify-content-between small fw-semibold mb-1">
+                    <span>{{ item.label }}</span>
+                    <span class="text-muted">{{ item.value }} <span class="text-secondary">({{ item.pct }}%)</span></span>
+                </div>
+                <div class="dist-bar">
+                    <div class="dist-fill" style="width: {{ item.pct }}%; background: {{ item.color }};"></div>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-muted mb-0">No application data available.</p>
+            {% endfor %}
+            <div class="mt-3 pt-3 border-top">
+                <a href="{% url 'application_list' %}" class="btn btn-sm btn-outline-primary fw-bold">View Pipeline</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <div class="card section-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
+                <h5 class="fw-bold mb-0"><span class="material-icons-round text-success align-middle me-2">show_chart</span> Applications Trend</h5>
+                <div class="btn-group btn-group-sm trend-range-btn" role="group">
+                    <a href="?trend=7" class="btn {% if trend.range == '7' %}btn-primary{% else %}btn-outline-secondary{% endif %}">7 Days</a>
+                    <a href="?trend=30" class="btn {% if trend.range == '30' %}btn-primary{% else %}btn-outline-secondary{% endif %}">30 Days</a>
+                    <a href="?trend=90" class="btn {% if trend.range == '90' %}btn-primary{% else %}btn-outline-secondary{% endif %}">90 Days</a>
+                    <a href="#customTrendRange" data-bs-toggle="collapse" class="btn {% if trend.range == 'custom' %}btn-primary{% else %}btn-outline-secondary{% endif %}">Custom</a>
+                </div>
+            </div>
+            <form method="get" action="{% url 'dashboard_home' %}" class="collapse mt-2 {% if trend.range == 'custom' %}show{% endif %}" id="customTrendRange">
+                <input type="hidden" name="trend" value="custom">
+                <div class="d-flex gap-2 align-items-center flex-wrap">
+                    <input type="date" name="trend_from" class="form-control form-control-sm" value="{{ trend.from_date }}" style="max-width: 160px;">
+                    <span class="text-muted small">to</span>
+                    <input type="date" name="trend_to" class="form-control form-control-sm" value="{{ trend.to_date }}" style="max-width: 160px;">
+                    <button type="submit" class="btn btn-sm btn-outline-primary fw-bold">Apply</button>
+                </div>
+            </form>
+            <div class="mt-3" style="height: 260px;">
+                <canvas id="trendChart"></canvas>
+            </div>
+            <small class="text-muted mt-2">Submissions {{ trend.from_date }} → {{ trend.to_date }}</small>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== 3. SUBMITTED + NEW ===================== -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card section-card h-100">
+            <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><span class="material-icons-round text-success align-middle me-2">check_circle</span> Submitted Applications</h5>
+                <a href="{% url 'application_list' %}?status=submitted" class="btn btn-sm btn-outline-primary fw-bold">View All Submitted ({{ total_submitted }})</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light text-muted small">
+                            <tr>
+                                <th class="ps-4">Application</th>
+                                <th>Name</th>
+                                <th>Program</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for app in recent_submitted %}
+                            <tr>
+                                <td class="ps-4 fw-bold text-primary">{{ app.application_number|default:"—" }}</td>
+                                <td class="fw-bold">{{ app.full_name|default:"—" }}</td>
+                                <td>{{ app.program_opting.name|default:"—" }}</td>
+                                <td>{{ app.submission_date|date:"M d, Y" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center text-muted py-4">No submitted applications.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <a href="{% url 'application_new' %}" class="card section-card p-4 h-100 text-decoration-none">
+            <div class="d-flex align-items-center justify-content-between">
+                <h5 class="fw-bold mb-0 text-dark"><span class="material-icons-round text-primary align-middle me-2">fiber_new</span> New Applications</h5>
+            </div>
+            <div class="text-center my-4">
+                <div class="display-3 fw-bold text-primary">{{ metrics.last_24h }}</div>
+                <span class="badge bg-light-primary text-primary fw-bold">Last 24 hours</span>
+            </div>
+            <div class="text-end">
+                <span class="btn btn-sm btn-primary fw-bold">View New Applications <span class="material-icons-round fs-6 align-middle">arrow_forward</span></span>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- ===================== 4. DEMOGRAPHICS + GEOGRAPHY ===================== -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card section-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><span class="material-icons-round text-primary align-middle me-2">group</span> Demographics</h5>
+                <a href="{% url 'report_demographics' %}" class="btn btn-sm btn-outline-secondary fw-bold">Full Report</a>
+            </div>
+            <div class="row">
+                <div class="col-md-5">
+                    <div style="height: 170px;"><canvas id="genderChart"></canvas></div>
+                </div>
+                <div class="col-md-7">
+                    <div class="small fw-bold text-muted text-uppercase mb-1">Gender</div>
+                    {% for row in gender_dist %}
+                    <div class="dist-row">
+                        <span class="dist-label small">{{ row.label }}</span>
+                        <span class="dist-count">{{ row.count }}</span>
+                    </div>
+                    {% endfor %}
+                    <div class="small fw-bold text-muted text-uppercase mb-1 mt-3">Category</div>
+                    {% for row in category_dist %}
+                    <div class="dist-row">
+                        <span class="dist-label small">{{ row.label }}</span>
+                        <span class="dist-count">{{ row.count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="small fw-bold text-muted text-uppercase mb-1">Religion</div>
+                    {% for row in religion_dist %}
+                    <div class="dist-row">
+                        <span class="dist-label small">{{ row.label }}</span>
+                        <span class="dist-count">{{ row.count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <a href="{% url 'report_geographical' %}" class="card section-card p-4 h-100 text-decoration-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0 text-dark"><span class="material-icons-round text-success align-middle me-2">map</span> Geographic Overview</h5>
+                <span class="btn btn-sm btn-outline-success fw-bold">Open Geographical Report</span>
+            </div>
+            <div class="row">
+                <div class="col-md-7">
+                    <div class="small fw-bold text-muted text-uppercase mb-1">Applications by State</div>
+                    {% for row in state_dist %}
+                    <div class="dist-row">
+                        <span class="dist-label small">{{ row.label }}</span>
+                        <span class="dist-count">{{ row.count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="col-md-5">
+                    <div style="height: 160px;"><canvas id="stateChart"></canvas></div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="small fw-bold text-muted text-uppercase mb-1">Top Districts</div>
+                    {% for row in district_dist %}
+                    <div class="dist-row">
+                        <span class="dist-label small">{{ row.label }}</span>
+                        <span class="dist-count">{{ row.count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- ===================== 5. PROGRAMS + QUALIFICATIONS ===================== -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card section-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><span class="material-icons-round text-purple align-middle me-2">school</span> Program Applications</h5>
+            </div>
+            <div style="height: 200px;"><canvas id="programChart"></canvas></div>
+            <div class="mt-3">
+                {% for row in program_dist %}
+                <div class="dist-row">
+                    {% if row.id %}
+                    <a class="dist-label small text-decoration-none" href="{% url 'application_list' %}?program={{ row.id }}">{{ row.label }}</a>
+                    {% else %}
+                    <span class="dist-label small">{{ row.label }}</span>
+                    {% endif %}
+                    <span class="dist-count">{{ row.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card section-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><span class="material-icons-round text-info align-middle me-2">menu_book</span> Qualification Distribution</h5>
+                <a href="{% url 'master_data' %}" class="btn btn-sm btn-outline-secondary fw-bold">Master Data</a>
+            </div>
+            {% for row in qualification_dist %}
+            <div class="dist-row">
+                {% if row.id %}
+                <a class="dist-label small text-decoration-none" href="{% url 'application_list' %}?qualification={{ row.id }}">{{ row.label }}</a>
+                {% else %}
+                <span class="dist-label small">{{ row.label }}</span>
+                {% endif %}
+                <span class="dist-count">{{ row.count }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- ===================== 6. PARTNERS + BATCHES ===================== -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card section-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><span class="material-icons-round text-success align-middle me-2">groups</span> Training Partners</h5>
+                <a href="{% url 'student_bulk_operations' %}" class="btn btn-sm btn-outline-secondary fw-bold">Manage Training Partners</a>
+            </div>
+            <div class="row">
+                <div class="col-md-5"><div style="height: 170px;"><canvas id="partnerChart"></canvas></div></div>
+                <div class="col-md-7">
+                    {% for row in partner_dist %}
+                    <div class="dist-row">
+                        {% if row.id %}
+                        <a class="dist-label small text-decoration-none" href="{% url 'application_list' %}?training_partner={{ row.id }}">{{ row.label }}</a>
+                        {% else %}
+                        <span class="dist-label small">{{ row.label }}</span>
+                        {% endif %}
+                        <span class="dist-count">{{ row.count }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card section-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><span class="material-icons-round text-warning align-middle me-2">grid_view</span> Batch Overview</h5>
+                <a href="{% url 'student_bulk_operations' %}" class="btn btn-sm btn-outline-secondary fw-bold">View All Batches</a>
+            </div>
+            <div style="height: 200px;"><canvas id="batchChart"></canvas></div>
+            <div class="mt-3">
+                {% for row in batch_dist %}
+                <div class="dist-row">
+                    {% if row.label != 'Unassigned' and row.label != 'Other' %}
+                    <a class="dist-label small text-decoration-none" href="{% url 'student_advanced_search' %}?batch_code={{ row.label }}">{{ row.label }}</a>
+                    {% else %}
+                    <span class="dist-label small">{{ row.label }}</span>
+                    {% endif %}
+                    <span class="dist-count">{{ row.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== 7. DOCUMENTS + DATA QUALITY ===================== -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card section-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><span class="material-icons-round text-primary align-middle me-2">folder_open</span> Document Status</h5>
+            </div>
+            <div class="dist-row">
+                <span class="dist-label small fw-bold text-success">Complete Documents</span>
+                <span class="dist-count">{{ doc_complete }}</span>
+            </div>
+            <div class="dist-row">
+                <span class="dist-label small fw-bold text-warning">Missing Documents</span>
+                <span class="dist-count">{{ doc_missing }}</span>
+            </div>
+            <div class="dist-row">
+                <span class="dist-label small fw-bold text-info">Pending Upload (Drafts)</span>
+                <span class="dist-count">{{ doc_pending_upload }}</span>
+            </div>
+            <hr>
+            <div class="small fw-bold text-muted text-uppercase mb-2">Most Missing Documents</div>
+            {% if most_missing %}
+                {% for row in most_missing %}
+                <div class="dist-row">
+                    <span class="dist-label small">{{ row.label }}</span>
+                    <span class="text-muted small">{{ row.count }} applications</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted small mb-0">No missing mandatory documents.</p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card section-card p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0"><span class="material-icons-round text-danger align-middle me-2">rule</span> Data Quality</h5>
+            </div>
+            {% for alert in quality_alerts %}
+            <a href="{% url 'application_list' %}?quality={{ alert.quality }}" class="d-flex align-items-center text-decoration-none py-2 border-bottom">
+                <span class="material-icons-round text-warning me-2">warning</span>
+                <span class="flex-grow-1 text-dark">{{ alert.count }} {{ alert.label }}</span>
+                <span class="material-icons-round text-muted fs-6">chevron_right</span>
+            </a>
+            {% endfor %}
+            <div class="small fw-bold text-muted text-uppercase mb-2 mt-3">Duplicate Alerts</div>
+            {% for row in duplicates %}
+            <a href="{% url 'application_list' %}?quality={{ row.quality }}" class="d-flex align-items-center text-decoration-none py-2 border-bottom">
+                <span class="material-icons-round text-danger me-2">content_copy</span>
+                <span class="flex-grow-1 text-dark">{{ row.label }} duplicates</span>
+                <span class="fw-bold text-danger">{{ row.count }}</span>
+            </a>
+            {% endfor %}
+            <div class="mt-3">
+                <a href="{% url 'student_advanced_search' %}" class="btn btn-sm btn-outline-danger fw-bold">Review Duplicates</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== 8. ACTIVITY + EXPORTS ===================== -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-7">
+        <div class="card section-card h-100">
+            <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><span class="material-icons-round text-info align-middle me-2">bolt</span> Today's Activity</h5>
+                <a href="{% url 'audit_logs' %}" class="btn btn-sm btn-outline-secondary fw-bold">All Audit Logs</a>
+            </div>
+            <div class="card-body p-4 activity-list">
+                {% for item in activity %}
+                <div class="activity-item">
+                    <div class="activity-icon bg-light-info text-info">
+                        <span class="material-icons-round fs-6">{{ item.icon }}</span>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between">
+                            <span class="fw-bold small">{{ item.title }}</span>
+                            <small class="text-muted font-monospace">{{ item.time|date:"H:i" }}</small>
+                        </div>
+                        {% if item.detail %}<div class="small text-muted">{{ item.detail|truncatechars:120 }}</div>{% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted mb-0 py-3 text-center">No activity recorded today.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card section-card h-100">
+            <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><span class="material-icons-round text-success align-middle me-2">file_download</span> Recent Exports</h5>
+                <a href="{% url 'export_center' %}" class="btn btn-sm btn-outline-success fw-bold">Open Export Center</a>
+            </div>
+            <div class="card-body p-4">
+                {% for job in recent_exports %}
+                <div class="activity-item">
+                    <div class="activity-icon bg-light-success text-success">
+                        <span class="material-icons-round fs-6">description</span>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between">
+                            <span class="fw-bold small">{{ job.export_type_label }} — {{ job.format_label }}</span>
+                            <small class="text-muted font-monospace">{{ job.display_id }}</small>
+                        </div>
+                        <div class="small text-muted">
+                            {{ job.record_count }} records · {{ job.created_at|date:"M d, H:i" }}
+                            {% if job.status == 'completed' %}<span class="badge bg-success">Completed</span>
+                            {% elif job.status == 'processing' %}<span class="badge bg-warning text-dark">Processing</span>
+                            {% else %}<span class="badge bg-danger">Failed</span>{% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted mb-0 py-3 text-center">No exports generated yet. <a href="{% url 'export_center' %}">Export something</a>.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== 9. SYSTEM HEALTH ===================== -->
+<div class="card section-card p-4 mb-5">
+    <h5 class="fw-bold mb-4"><span class="material-icons-round text-success align-middle me-2">monitor_heart</span> System Health</h5>
+    <div class="row g-3">
+        {% for item in health %}
+        <div class="col-lg-3 col-md-6 col-sm-6">
+            <div class="d-flex align-items-center gap-3 p-3 border rounded-3">
+                <span class="material-icons-round fs-2 {% if item.status == 'ok' %}text-success{% elif item.status == 'warn' %}text-warning{% else %}text-danger{% endif %}">{{ item.icon }}</span>
+                <div>
+                    <div class="small fw-bold text-uppercase text-muted">{{ item.name }}</div>
+                    <div class="fw-bold d-flex align-items-center gap-1">
+                        <span class="dot {% if item.status == 'ok' %}bg-success{% elif item.status == 'warn' %}bg-warning{% else %}bg-danger{% endif %}"></span>
+                        <span class="health-pill {% if item.status == 'ok' %}text-success{% elif item.status == 'warn' %}text-warning{% else %}text-danger{% endif %}">
+                            {% if item.status == 'ok' %}Healthy{% elif item.status == 'warn' %}Attention{% else %}Unhealthy{% endif %}
+                        </span>
+                    </div>
+                    <small class="text-muted">{{ item.detail }}</small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- ===================== RECENT APPLICATIONS ===================== -->
+<div class="card section-card mb-5">
+    <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0"><span class="material-icons-round text-primary align-middle me-2">list_alt</span> Recent Applications</h5>
+        <a href="{% url 'application_list' %}" class="btn btn-sm btn-outline-secondary fw-bold">View All</a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-muted small">
+                    <tr>
+                        <th class="ps-4">App Number</th>
+                        <th>Student Name</th>
+                        <th>Aadhaar</th>
+                        <th>Program</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for app in recent_apps %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-primary">{{ app.application_number|default:"—" }}</td>
+                        <td class="fw-bold">{{ app.full_name|default:"—" }}</td>
+                        <td class="font-monospace text-muted">{{ app.aadhaar_number|default:"—" }}</td>
+                        <td>{{ app.program_opting.name|default:"—" }}</td>
+                        <td>{{ app.submission_date|date:"M d, Y" }}</td>
+                        <td>
+                            {% if app.status.code == 'INCOMPLETE' %}
+                            <span class="badge bg-info text-dark">Draft</span>
+                            {% elif app.status.code == 'SUBMITTED' %}
+                            <span class="badge bg-success">Submitted</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">No recent applications found in database.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Chart data embedded as safe JSON -->
+{{ chart.gender.labels|json_script:"genderLabels" }}
+{{ chart.gender.counts|json_script:"genderCounts" }}
+{{ chart.category.labels|json_script:"categoryLabels" }}
+{{ chart.category.counts|json_script:"categoryCounts" }}
+{{ chart.religion.labels|json_script:"religionLabels" }}
+{{ chart.religion.counts|json_script:"religionCounts" }}
+{{ chart.state.labels|json_script:"stateLabels" }}
+{{ chart.state.counts|json_script:"stateCounts" }}
+{{ chart.district.labels|json_script:"districtLabels" }}
+{{ chart.district.counts|json_script:"districtCounts" }}
+{{ chart.program.labels|json_script:"programLabels" }}
+{{ chart.program.counts|json_script:"programCounts" }}
+{{ chart.qualification.labels|json_script:"qualificationLabels" }}
+{{ chart.qualification.counts|json_script:"qualificationCounts" }}
+{{ chart.partner.labels|json_script:"partnerLabels" }}
+{{ chart.partner.counts|json_script:"partnerCounts" }}
+{{ chart.batch.labels|json_script:"batchLabels" }}
+{{ chart.batch.counts|json_script:"batchCounts" }}
+{{ trend.labels|json_script:"trendLabels" }}
+{{ trend.counts|json_script:"trendCounts" }}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function j(id) {
+        const el = document.getElementById(id);
+        return el ? JSON.parse(el.textContent) : [];
+    }
+
+    const PALETTE = ['#0d6efd', '#e83e8c', '#ffc107', '#198754', '#6f42c1', '#0dcaf0', '#fd7e14', '#dc3545'];
+
+    function chart(canvasId, type, labels, counts, opts) {
+        const el = document.getElementById(canvasId);
+        if (!el || !labels.length) { if (el) { el.closest('div').innerHTML = '<p class="text-muted small text-center py-3">No data.</p>'; } return; }
+        const ctx = el.getContext('2d');
+        const data = { labels: labels, datasets: [{
+            label: opts && opts.label || 'Count',
+            data: counts,
+            backgroundColor: labels.map((_, i) => PALETTE[i % PALETTE.length]),
+            borderColor: type === 'line' ? '#0d6efd' : undefined,
+            fill: type === 'line',
+            tension: type === 'line' ? 0.35 : undefined,
+            borderRadius: 4,
+            borderWidth: type === 'line' ? 2 : 0
+        }]};
+        const options = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } },
+            scales: (type === 'line' || type === 'bar') ? {
+                y: { beginAtZero: true, grid: { borderDash: [2, 4] }, ticks: { precision: 0 } },
+                x: { grid: { display: false } }
+            } : undefined
+        };
+        new Chart(ctx, { type: type, data: data, options: options });
+    }
+
+    // Trend
+    chart('trendChart', 'line', j('trendLabels'), j('trendCounts'), { label: 'Submissions' });
+    // Gender doughnut
+    chart('genderChart', 'doughnut', j('genderLabels'), j('genderCounts'));
+    // State bar
+    chart('stateChart', 'bar', j('stateLabels'), j('stateCounts'));
+    // Program bar
+    chart('programChart', 'bar', j('programLabels'), j('programCounts'));
+    // Partner doughnut
+    chart('partnerChart', 'doughnut', j('partnerLabels'), j('partnerCounts'));
+    // Batch bar
+    chart('batchChart', 'bar', j('batchLabels'), j('batchCounts'));
+});
+</script>
+{% endblock %}

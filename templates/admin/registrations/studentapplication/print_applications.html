@@ -1,0 +1,51 @@
+{% extends "admin/base_site.html" %}
+{% block title %}Print selected applications | CSC Admin{% endblock %}
+
+{% block content %}
+<script>window.addEventListener('load', function(){ setTimeout(function(){ window.print(); }, 300); });</script>
+
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <h1>{{ applications.count }} selected application(s)</h1>
+    <a href="{% url 'admin:registrations_studentapplication_changelist' %}" class="button">Back to list</a>
+</div>
+
+{% for app in applications %}
+<table style="width:100%; border-collapse:collapse; margin-bottom:16px; page-break-inside:avoid;">
+    <tr>
+        <th colspan="4" style="background:#eee; border:1px solid #ddd; padding:6px; text-align:left;">
+            {{ app.application_number }} - {{ app.full_name }} ({{ app.status.name|default:"UNKNOWN" }})
+        </th>
+    </tr>
+    <tr>
+        <td style="border:1px solid #ddd; padding:6px; width:20%;"><strong>Mobile</strong></td>
+        <td style="border:1px solid #ddd; padding:6px; width:30%;">{{ app.mobile_number }}</td>
+        <td style="border:1px solid #ddd; padding:6px; width:20%;"><strong>Email</strong></td>
+        <td style="border:1px solid #ddd; padding:6px; width:30%;">{{ app.email|default:"-" }}</td>
+    </tr>
+    <tr>
+        <td style="border:1px solid #ddd; padding:6px;"><strong>DOB</strong></td>
+        <td style="border:1px solid #ddd; padding:6px;">{{ app.dob|date:"d-m-Y" }}</td>
+        <td style="border:1px solid #ddd; padding:6px;"><strong>Gender</strong></td>
+        <td style="border:1px solid #ddd; padding:6px;">{{ app.gender|default:"-" }}</td>
+    </tr>
+    <tr>
+        <td style="border:1px solid #ddd; padding:6px;"><strong>Verification</strong></td>
+        <td style="border:1px solid #ddd; padding:6px;">{{ app.verification_status.name|default:"-" }}</td>
+        <td style="border:1px solid #ddd; padding:6px;"><strong>Partner / Batch</strong></td>
+        <td style="border:1px solid #ddd; padding:6px;">{{ app.training_partner.name|default:"-" }}{% if app.batch_code %} / {{ app.batch_code }}{% endif %}</td>
+    </tr>
+    <tr>
+        <td style="border:1px solid #ddd; padding:6px;"><strong>Program</strong></td>
+        <td style="border:1px solid #ddd; padding:6px;" colspan="3">{{ app.program_opting.name|default:"-" }}</td>
+    </tr>
+    <tr>
+        <td style="border:1px solid #ddd; padding:6px;"><strong>Documents</strong></td>
+        <td style="border:1px solid #ddd; padding:6px;" colspan="3">
+            {% for doc in app.documents.all %}{{ doc.doc_type_display }}{% if not forloop.last %}, {% endif %}{% empty %}-{% endfor %}
+        </td>
+    </tr>
+</table>
+{% empty %}
+<p>No applications selected.</p>
+{% endfor %}
+{% endblock %}
